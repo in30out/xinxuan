@@ -23,7 +23,11 @@ If Not fso.FileExists(app) Then
 End If
 
 ' 0 = hidden window, False = do not wait for the process to exit。
-' --hide-console 让 exe 自己把控制台藏掉。
+' --hide-console 让 exe 自己把控制台藏掉，同时也是"静默启动"的信号：
+' exe 据此知道没有控制台可用（也就没有 Ctrl+C），退出入口改用原生对话框，
+' 并在浏览器交接失败时把地址弹给用户。
+' （曾尝试用 WScript.Shell.Environment("Process") 另设一个环境变量，
+'   实测会让 shell.Run 返回 0x800700D8，故改用命令行开关这一条路。）
 cmd = """" & app & """ --hide-console"
 shell.Run cmd, 0, False
 WScript.Quit 0

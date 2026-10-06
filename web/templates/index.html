@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>芯选 · 芯片替代选型智能推荐</title>
 <link rel="stylesheet" href="/static/app.css">
+<script>
+/* 启动探针：桌面壳用 ?_boot=<token> 打开本页时，回一个 1x1 像素请求，
+   让启动器能确认"浏览器真的把页面打开了"（而不是只看 webbrowser.open 的返回值）。
+   没有 _boot 参数时（普通开发者访问）什么都不做。 */
+(function () {
+  try {
+    var m = /[?&]_boot=([A-Za-z0-9_-]+)/.exec(location.search);
+    if (m) { new Image().src = "/_boot/" + m[1]; }
+  } catch (e) { /* 探针失败不影响页面 */ }
+})();
+</script>
 </head>
 <body>
 

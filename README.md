@@ -238,9 +238,11 @@ powershell -ExecutionPolicy Bypass -File run.ps1
 
 | 产物 | 体积 | SHA256（前 16 位） |
 | --- | --- | --- |
-| `dist\芯选\芯选.exe` | 10,386,496 B（9.9 MB） | `F6A2470ADCEA2722` |
+| `dist\芯选\芯选.exe` | 10,391,948 B（9.9 MB） | `7954ADE2B0E161CA` |
 | `dist\芯选\`（整目录 835 文件） | 111.7 MB | — |
-| `dist\芯选-便携版.zip`（838 条目） | 51.2 MB | `07089A263D7A6804` |
+| `dist\芯选-便携版.zip`（838 条目） | 51.2 MB | `45BF743074603660` |
+
+> 便携包同时留了一份在 `交付_芯选_v1.4\`（`芯选-便携版-v1.4.zip` + 已解压目录 + `README-交付说明.md`），SHA256 与上表一致。
 
 **为什么默认不是 onefile**：PyInstaller 的 onefile 形态启动时必须先把自己解包到 `%TEMP%\_MEIxxxxxx`，而本 harness 的沙箱**禁止进程写"不是它自己创建的目录"**，于是必然失败：
 
@@ -253,8 +255,14 @@ fopen: Permission denied
 
 **默认保留控制台（`--console`），无黑框由启动器负责**：正式包的内核是 `--console` 形态（实测 2.1 秒内 `/api/health` 200），因为 `--windowed` 在本环境会静默失败。用户侧看不到黑框 —— 双击 `静默启动（无黑框）.vbs`，它用 `WScript.Shell.Run(..., 0, False)` 隐藏窗口起进程，exe 再用 `--hide-console` 把自己那个控制台窗口 `ShowWindow(SW_HIDE)` 藏掉；浏览器模式下退出入口是原生对话框，WebView2 模式下关窗即退出（`os._exit(0)`）。想看到控制台排错就双击 `双击运行.cmd` 或自己加 `--verbose`。
 
-> **两个启动器都已从"从 ZIP 解压后的目录"实跑验收**（2026-10-06）：`静默启动（无黑框）.vbs` → `cscript exit=0`、进程存活、`/api/health` 200、`/api/recommend` `APM32F103C8T6` 0.7256 / 5.16 ms；`双击运行.cmd` → 打印 `Starting XinXuan ...`、`/api/health` 200。
+> **两个启动器都已从"从 ZIP 解压后的目录"实跑验收**（2026-10-06，`.tmp/verify_portable_launch.py`，20 项断言全过）：`静默启动（无黑框）.vbs` → `cscript exit=0`、进程存活、启动到就绪 **5.6–8.2 s**、`/api/health` 200、`GET /` 200/29,896 B、`/api/recommend` `APM32F103C8T6` **0.7256 / 4.97 ms**、`/api/stats` total=89、`/static/app.js` 51,341 B。
 > 修过的一个真缺陷：`双击运行.cmd` 原先用 `for %%F in ("*\*.exe")` 找 exe，实测**匹配不到**（`dir /b /s` 通配才行，且文件名是中文时更不稳），导致"双击报 exe not found"；已改为 `for /f "delims=" %%F in ('dir /b /s *.exe 2^>nul')`。
+
+**浏览器没自动打开怎么办**：程序**不靠 API 返回值判断**，而是用一个探针回环确认"服务端是否真的收到了页面请求"（页面带 `_boot=<token>` 时回请求一个 1×1 像素），每次尝试后都验一次；全部失败就弹框把地址给你。尝试顺序是「**另起一个全新实例（独立 `user-data-dir`）** → `os.startfile` → 直启」——把"另起实例"放第一位是为了绕开你实测遇到的那个对话框：
+
+> Microsoft Edge 未响应，因为现有实例正在以提升的权限运行。是否要用普通权限重启现有实例？
+
+它的根因是**你的 Edge 以管理员权限运行、而本程序是普通权限**（提权实例不能被普通权限进程交接），用独立 profile 另起实例就不碰已有实例 IPC，从根上绕开。若仍没打开，把日志里 `已就绪: http://127.0.0.1:<port>/` 的地址手工贴进浏览器即可。详见《需求及开发文档》§3.8.9。
 
 打包时默认**裁掉 scipy / sklearn / joblib / threadpoolctl**（省约 105–150 MB），召回改走 `prototype/recall.py` 里的纯 numpy TF-IDF 兜底 —— 两种实现的结果已被 `scripts\compare_vectorizer.py` 证明等价（**Top-5 顺序一致 10/10，相似度最大相对误差 2.4e-06**）。想要完整 sklearn 路径就加 `--with-sklearn`。
 

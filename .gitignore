@@ -27,6 +27,11 @@ dist/
 # PyInstaller 的 spec 由 build_exe.py 现场生成（内含本机绝对路径），不提交
 *.spec
 
+# ===== 免安装交付包（体积大，且可由 build_exe.py 一条命令重建） =====
+# 重建：python build_exe.py --clean          → dist\芯选-便携版.zip
+# 跑完 .tmp/sync_delivery.py 刷新 交付_芯选_v1.4\ 里的副本
+交付_芯选_v1.4/
+
 # ===== 数据集：可重新下载/生成的大文件 =====
 # 生成命令：
 #   python scripts/fetch_dataset.py            # 下载 jlcparts 快照（约 5 MB）

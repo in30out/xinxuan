@@ -23,11 +23,14 @@ import argparse
 import logging
 import os
 import socket
+import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 
 log = logging.getLogger("xinxuan")
 
@@ -81,6 +84,161 @@ def wait_ready(port, timeout=30.0):
         except (urllib.error.URLError, OSError):
             time.sleep(0.15)
     return False
+
+
+def probe_marker_path():
+    """浏览器探针文件的路径（由 --browser-probe 传入，或读环境变量）。"""
+    return os.environ.get("XINXUAN_BROWSER_PROBE") or None
+
+
+def browser_reached(prefix=None, wait=8.0, marker=None):
+    """判断"浏览器是否真的把页面打开了"。
+
+    为什么不能只看调用返回值：实测（见 .tmp/probe_browser2.py）在受限环境里
+    os.startfile / webbrowser.open / open_new_tab / msedge+独立 profile / chrome+独立 profile
+    全部返回"成功"，但服务端 access log **一次请求都没有** —— 调用成功 != 页面打开。
+
+    唯一硬判据是"浏览器真的来请求过页面"。这里给每次尝试生成一个一次性 URL 后缀，
+    由页面里的 <img src="/_boot/<token>"> 触发；自定义的 /_boot/ 处理器收到后落一个
+    标记文件，我们轮询这个文件即可确认。
+    """
+    marker = marker or probe_marker_path()
+    if not marker or not prefix:
+        return None  # 没有探针渠道，无法判定
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        try:
+            if os.path.exists(marker):
+                return True
+        except OSError:
+            pass
+        time.sleep(0.2)
+    return False
+
+
+def _browser_paths():
+    """常见 Chromium 系浏览器的可执行文件位置（按存在性过滤）。"""
+    local = os.environ.get("LOCALAPPDATA", "")
+    prog = os.environ.get("ProgramFiles", r"C:\Program Files")
+    prog86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+    out = []
+    for cands in (
+        [os.path.join(prog86, r"Microsoft\Edge\Application\msedge.exe"),
+         os.path.join(prog, r"Microsoft\Edge\Application\msedge.exe"),
+         os.path.join(local, r"Microsoft\Edge\Application\msedge.exe")],
+        [os.path.join(prog, r"Google\Chrome\Application\chrome.exe"),
+         os.path.join(prog86, r"Google\Chrome\Application\chrome.exe"),
+         os.path.join(local, r"Google\Chrome\Application\chrome.exe")],
+    ):
+        for path in cands:
+            if os.path.exists(path):
+                out.append(path)
+                break
+    return out
+
+
+def is_elevated():
+    """当前进程是否提权运行（提权会让浏览器交接失败，见 _open_browser 说明）。"""
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _open_browser(url, prefix=None, wait=6.0):
+    """把 URL 交给浏览器，并**验证它真的打开了**。返回 (是否已打开, 成功的方式名)。
+
+    顺序按"**先把能用的用掉**"排，每次尝试后立刻用探针确认：
+
+      1. Edge/Chrome + **独立 user-data-dir** —— 放在第一位是有原因的：用户实测反馈过
+         「Microsoft Edge 未响应，因为现有实例正在以提升的权限运行。是否要用普通权限
+         重启现有实例？」那句话，正是 os.startfile（走 shell 默认程序 + 已有实例 IPC）
+         触发的。带独立 user-data-dir 启动会**另起一个全新实例**，不碰已有实例的 IPC，
+         从根上绕开权限冲突，也不会弹那个让人不知所措的对话框。
+      2. os.startfile —— Windows 最正统的"用默认程序打开"。只有在"另起实例"没能把页面
+         打开时才会走到这里（例如系统里只有默认浏览器、且它不是 Edge/Chrome）。
+         这种环境通常是权限一致的，一次就中，不会多出一个孤立窗口。
+      3. Edge/Chrome 直启（不带 profile）—— 最后再试一次。
+      （不再单独试 webbrowser.open：它内部就是 os.startfile / ShellExecute，重复且多花时间。）
+
+    返回值严格：True=探针命中（浏览器真的来请求过页面）；False=试完都没命中。
+    """
+    attempts: list[str] = []
+
+    def _try(name, fn):
+        try:
+            fn()
+            attempts.append(name)
+            return True
+        except Exception as exc:  # noqa: BLE001
+            attempts.append(f"{name}({type(exc).__name__})")
+            return False
+
+    exes = _browser_paths()
+    log.info("浏览器交接开始（每次尝试后用探针确认页面是否真的被打开）：%s",
+             "、".join(os.path.basename(e) for e in exes) or "未找到 Edge/Chrome")
+    profile = os.path.join(tempfile.gettempdir(), "xinxuan-browser-profile")
+    try:
+        os.makedirs(profile, exist_ok=True)
+    except OSError:
+        profile = None
+
+    # 1) 独立 profile 优先：绕开"已有实例权限不一致"，同时避免 Edge 弹权限对话框
+    if profile:
+        for exe in exes:
+            tag = os.path.basename(exe)
+            _try(f"{tag}+独立profile",
+                 lambda e=exe: subprocess.Popen(  # noqa: S603
+                     [e, f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check", url],
+                     close_fds=True))
+            if browser_reached(prefix, wait=wait):
+                log.info("浏览器已打开（方式：%s + 独立 profile）", tag)
+                return True, f"{tag}+profile"
+
+    # 2) 系统默认程序（正统路径；换了环境才走到这里）
+    _try("os.startfile", lambda: os.startfile(url))  # noqa: S606 —— Windows 专有，正是要用它
+    if browser_reached(prefix, wait=8.0):
+        log.info("浏览器已打开（方式：os.startfile）")
+        return True, "os.startfile"
+
+    # 3) 直启（不另带 profile）：最后再试一次，等待时间收紧，避免用户白等
+    for exe in exes:
+        tag = os.path.basename(exe)
+        _try(f"{tag}(直启)", lambda e=exe: subprocess.Popen([e, url], close_fds=True))  # noqa: S603
+        if browser_reached(prefix, wait=4.0):
+            log.info("浏览器已打开（方式：%s 直启）", tag)
+            return True, tag
+
+    log.warning("浏览器交接失败（全部方式都没收到页面请求，说明浏览器没打开）。已尝试：%s",
+                "、".join(attempts))
+    if is_elevated():
+        log.warning("当前进程是提权运行的；提权进程常常无法把 URL 交给普通权限的浏览器实例，"
+                    "请改用非提权的终端/资源管理器双击启动。")
+    return False, ""
+
+
+def browser_tip(url):
+    """浏览器没打开时的原生提示：把地址摆到用户眼前，并说明怎么自己打开。"""
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            f"芯选 已经启动，但自动打开浏览器没有成功。\n\n"
+            f"请在浏览器地址栏里手动粘贴：\n{url}\n\n"
+            f"（本窗口不要关闭，关掉它就停止服务）\n\n"
+            f"提示：如果刚才 Microsoft Edge 弹过\n"
+            f"「现有实例正在以提升的权限运行」，\n"
+            f"请从资源管理器双击启动，或换一个非管理员终端。",
+            WINDOW_TITLE, 0x30)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("浏览器提示框失败：%s", exc)
 
 
 def hide_console():
@@ -256,6 +414,34 @@ def _crash_log(argv):
             pass
 
 
+def _boot_probe_hook():
+    """在应用上加一次性引导探针：GET /_boot/<token> 落一个标记文件并返回 1x1 gif。
+
+    为什么放在壳里而不是 wsgi.py：这是"启动器如何知道浏览器真的打开了"的机制，
+    属于桌面壳的职责；开发态与冻结态共用同一段代码。
+    """
+    token = uuid.uuid4().hex[:12]
+    marker = os.path.join(tempfile.gettempdir(), f"xinxuan-boot-{token}.probe")
+    os.environ["XINXUAN_BROWSER_PROBE"] = marker
+    gif = (b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!"
+           b"\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;")
+
+    from flask import Response
+
+    def register(app):
+        @app.route("/_boot/<probe_token>")
+        def _boot(probe_token):  # noqa: ANN202
+            if probe_token == token:
+                try:
+                    with open(marker, "w", encoding="utf-8") as fh:
+                        fh.write("ok")
+                except OSError:
+                    pass
+            return Response(gif, mimetype="image/gif")
+
+    return token, register
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="芯选桌面版")
     ap.add_argument("--browser", action="store_true", help="用默认浏览器打开（不依赖 pywebview）")
@@ -270,7 +456,10 @@ def main(argv=None):
     ap.add_argument("--verbose", action="store_true", help="日志同时打到 stderr")
     args = ap.parse_args(argv)
 
-    if args.hide_console:
+    # 静默启动器（VBS）会设 XINXUAN_SILENT_LAUNCH=1：没有控制台可见，也就没有 Ctrl+C，
+    # 所以退出入口改用原生对话框。
+    silent = bool(os.environ.get("XINXUAN_SILENT_LAUNCH"))
+    if args.hide_console or silent:
         hide_console()
 
     logfile = _setup_log(args.verbose)
@@ -278,6 +467,8 @@ def main(argv=None):
     env_port = os.environ.get("PORT")
     port = free_port(args.port or (int(env_port) if env_port and env_port.isdigit() else None))
     app = create_app(args.csv)
+    probe_token, register_probe = _boot_probe_hook()
+    register_probe(app)
     if args.debug:
         app.run(host="127.0.0.1", port=port, debug=True, use_reloader=False)
         return 0
@@ -297,12 +488,16 @@ def main(argv=None):
         opened = _open_window(url, args.gui)
 
     if not opened:
-        import webbrowser
-
-        log.info("改用浏览器模式打开 %s", url)
-        webbrowser.open(url)
-        if getattr(sys, "frozen", False) and args.hide_console:
-            # 黑框已经藏起来了，没有 Ctrl+C 可用 —— 用原生对话框当退出入口
+        probe_url = f"{url}?_boot={probe_token}"
+        log.info("改用浏览器模式打开 %s", probe_url)
+        reached, how = _open_browser(probe_url, prefix=probe_token)
+        if reached:
+            log.info("浏览器已确认打开（方式：%s）", how)
+        else:
+            log.warning("无法确认浏览器已打开，改为弹出地址提示")
+            browser_tip(url)
+        if getattr(sys, "frozen", False) and (args.hide_console or silent):
+            # 黑框已经藏起来了，也没有 Ctrl+C 可用 —— 用原生对话框当退出入口
             confirm_exit(url)
             server.shutdown()
             os._exit(0)
