@@ -286,6 +286,7 @@ def main() -> int:
               f"{len(revs)} local commit(s)")
 
     new_sha = ""
+    pub_shas: list[str] = []
     for idx, rev in enumerate(revs, 1):
         info = revision_info(root, rev)
         uploaded, root_sha = publish_tree(root, f"{login}/{args.repo}", token, rev,
@@ -297,8 +298,14 @@ def main() -> int:
         if status != 201:
             sys.exit(f"FAIL: commit -> {status}: {res.get('message')}")
         new_sha = res["sha"]
+        pub_shas.append(new_sha)
         print(f"commit        : {new_sha}  <- local {info['sha'][:10]}")
         published = uploaded
+
+    # Expected remote parent chain: published commits point at the *published*
+    # SHA of the previous commit, which differs from the local SHA whenever the
+    # existing parent set differs (that is exactly what --prune-history changes).
+    expect_parents = [pub_shas[-2]] if len(pub_shas) > 1 else remote_parent
 
     # ---- ref ----------------------------------------------------------------
     status, res = api("POST", f"{API}/repos/{login}/{args.repo}/git/refs", token,
@@ -324,10 +331,28 @@ def main() -> int:
 
     status, info = api("GET", f"{API}/repos/{login}/{args.repo}/commits/{new_sha}", token)
     got_parents = [p["sha"] for p in info.get("parents", [])] if status == 200 else []
-    expect_parents = [] if args.prune_history else remote_parent
     print("remote parents:", [p[:12] for p in got_parents] or "none (root commit)")
     print("local tip     :", tip["sha"][:10], "message:",
           tip["message"].splitlines()[0][:60])
+    if args.prune_history:
+        # The whole published chain must be the local history: every commit but
+        # the last must have exactly one parent.
+        chain: list[str] = []
+        walk = new_sha
+        while walk:
+            status, node = api("GET", f"{API}/repos/{login}/{args.repo}/commits/{walk}", token)
+            if status != 200:
+                sys.exit(f"FAIL: walk history -> {status}")
+            chain.append(node["commit"]["message"].splitlines()[0][:60])
+            walk = node["parents"][0]["sha"] if node["parents"] else ""
+            if len(chain) > 200:
+                sys.exit("FAIL: history walk did not terminate")
+        print(f"remote history: {len(chain)} commit(s) (local: {len(revs)})")
+        for i, line in enumerate(reversed(chain), 1):
+            print(f"   {i}. {line}")
+        if len(chain) != len(revs):
+            print(f"FAIL: remote has {len(chain)} commits, expected {len(revs)}")
+            return 1
     if got_parents != expect_parents:
         print("FAIL: remote parents", [p[:10] for p in got_parents],
               "!= expected", [p[:10] for p in expect_parents])

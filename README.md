@@ -164,13 +164,17 @@ git push origin main
 而 Python 的 `urllib` 能正常访问 `api.github.com`，所以提供了一条等价通道：
 
 ```powershell
-python scripts\publish_to_github.py --dry-run   # 先看要上传什么
-python scripts\publish_to_github.py             # 用 GitHub Git Data API 提交
+python scripts\publish_to_github.py --dry-run              # 先看要上传什么（不写任何东西）
+python scripts\publish_to_github.py                        # 叠一个新提交到远端分支
+python scripts\publish_to_github.py --history 3            # 让远端历史与本地最近 3 个提交一致
 ```
 
-它会：读 Git Credential Manager 里的凭据 → 逐个上传 blob（**用 SHA 比对证明与本地提交逐字节一致**）→ 重建目录树 → 用相同的提交信息/作者/时间建提交 → 更新分支 → 校验远端文件集合与本地一致，最后打印 `PUBLISH_OK`。token 不会打印、不落盘、不写进 `.git/config`。
+它会：读 Git Credential Manager 里的凭据 → 逐个上传 blob（**用 SHA 比对证明与本地提交逐字节一致**）→ 重建目录树 → 用相同的提交信息/作者/时间建提交 → 更新分支 → 校验远端文件集合、blob SHA 与父提交链，最后打印 `PUBLISH_OK`。token 不会打印、不落盘、不写进 `.git/config`。
 
-> 首次发布时仓库是空的，GitHub 的 Git Data API 在空仓库上会返回 `409 Git Repository is empty`，因此它是先由 Contents API 建一个占位提交、再在其上提交，本地历史不受影响。
+`--history N` 用于让远端历史**与本地完全一致**（按父链依次发布 N 个提交，会 `force` 重写分支，仅限还没有人 clone 过的全新仓库）。本仓库当前就是这样对齐的：远端 3 个提交的 **tree SHA 与本地逐一对上**（`c8fba0dc9864` / `e6db361e9f17` / `0f3150ea2cc1`）。
+
+> 首次发布时仓库是空的，GitHub 的 Git Data API 在空仓库上会返回 `409 Git Repository is empty`，因此它是先由 Contents API 建一个占位提交、再在其上提交；那些占位提交已用 `--history` 重写掉。
+> 注意：GitHub 的提交对象里 author 与 committer 共用同一个时间戳（都取本地 committer date），所以**同一份内容在两侧算出的提交 SHA 不同**——本地与远端的对应关系以 **tree SHA 相同**为准，`--history` 模式会打印这一步比对。
 
 ---
 
