@@ -102,63 +102,34 @@ def token_from_gcm() -> tuple[str, str]:
     sys.exit("FAIL: no usable GitHub credential. Run 'git credential-manager github login' first.")
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description="Publish local git history to GitHub via the API")
-    ap.add_argument("--repo", default=os.environ.get("XINXUAN_REPO", "xinxuan"))
-    ap.add_argument("--branch", default="")
-    ap.add_argument("--ref", default="HEAD", help="local revision to publish (default HEAD)")
-    ap.add_argument("--dry-run", action="store_true")
-    args = ap.parse_args()
+def publish_tree(root: str, repo: str, token: str, ref: str,
+                 label: str = "") -> tuple[dict[str, str], str]:
+    """Upload every blob of `ref` and rebuild its tree; return {path: sha}.
 
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    run = lambda *a: subprocess.run(  # noqa: E731
-        ["git", "-C", root, *a], capture_output=True, timeout=300
-    )
-
+    Two traps live here, both hit during the first real publication:
+    * blobs must be sent as base64. Sending them as latin-1 text made GitHub
+      re-encode the UTF-8, producing a different blob SHA (1215 B -> 1794 B).
+      GitHub uses the same blob hashing as git, so "returned SHA == local SHA"
+      is a byte-for-byte proof and no read-back is needed.
+    * a directory that only ever appears as a parent of other directories has
+      no file of its own; building trees by walking file paths skipped `docs/`
+      and `data/` and silently published 26 of 40 files. All ancestors are
+      therefore materialised explicitly.
+    """
     def text(*a) -> str:
-        proc = run(*a)
+        proc = subprocess.run(["git", "-C", root, *a], capture_output=True,
+                              timeout=300, encoding="utf-8", errors="replace")
         if proc.returncode != 0:
-            sys.exit(f"FAIL: git {' '.join(a)}: {proc.stderr.decode('utf-8', 'replace')[:300]}")
-        return proc.stdout.decode("utf-8", "replace")
-
-    branch = args.branch or text("branch", "--show-current").strip() or "main"
-    user, token = token_from_gcm()
-    status, me = api("GET", f"{API}/user", token)
-    if status != 200:
-        sys.exit(f"FAIL: GET /user -> {status}: {me.get('message')}")
-    login = me["login"]
-    print(f"authenticated as {login}")
-
-    status, repo = api("GET", f"{API}/repos/{login}/{args.repo}", token)
-    if status != 200:
-        sys.exit(f"FAIL: repository {login}/{args.repo} unreachable -> {status}: {repo.get('message')}")
-    print(f"repository    : {repo['html_url']} (private={repo['private']})")
-
-    if run("rev-parse", "--verify", "HEAD").returncode != 0:
-        sys.exit("FAIL: no commits yet, commit locally first")
+            sys.exit(f"FAIL: git {' '.join(a)}: {(proc.stderr or '')[:300]}")
+        return proc.stdout
 
     entries: list[tuple[str, str, str, int]] = []
-    for line in text("ls-tree", "-r", "--long", args.ref).splitlines():
+    for line in text("ls-tree", "-r", "--long", ref).splitlines():
         meta, _, path = line.partition("\t")
         mode, kind, sha, size = meta.split()
         if kind == "blob":
             entries.append((path, mode, sha, int(size)))
-    message = text("log", "-1", "--pretty=%B", args.ref).rstrip("\n")
-    who = {
-        "name": text("log", "-1", "--pretty=%an", args.ref).strip(),
-        "email": text("log", "-1", "--pretty=%ae", args.ref).strip(),
-    }
-    stamp = text("log", "-1", "--pretty=%aI", args.ref).strip()
-    when = datetime.fromisoformat(stamp).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    total = sum(e[3] for e in entries)
-    print(f"to publish    : {len(entries)} files, {total / 1e6:.2f} MB, branch {branch}")
-    if args.dry_run:
-        for path, _, sha, size in entries:
-            print(f"   {path}  ({size:,} B)  {sha[:10]}")
-        print("DRY_RUN_OK")
-        return 0
 
-    # ---- blobs --------------------------------------------------------------
     shas = [e[2] for e in entries]
     proc = subprocess.Popen(["git", "-C", root, "cat-file", "--batch"],
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -177,17 +148,16 @@ def main() -> int:
     modes = {p: m for p, m, _, _ in entries}
     uploaded: dict[str, str] = {}
     for idx, (path, _mode, sha, size) in enumerate(entries, 1):
-        blob = payloads[sha]
-        status, res = api("POST", f"{API}/repos/{login}/{args.repo}/git/blobs", token,
-                          {"content": base64.b64encode(blob).decode("ascii"), "encoding": "base64"})
+        status, res = api("POST", f"{API}/repos/{repo}/git/blobs", token,
+                          {"content": base64.b64encode(payloads[sha]).decode("ascii"),
+                           "encoding": "base64"})
         if status != 201:
             sys.exit(f"FAIL: blob {path} -> {status}: {res.get('message')}")
         if res["sha"] != sha:
             sys.exit(f"FAIL: blob SHA mismatch for {path}: {res['sha']} != {sha}")
         uploaded[path] = res["sha"]
-        print(f"  [{idx:>3}/{len(entries)}] {path} ({size:,} B) -> {sha[:10]}")
+        print(f"  {label}[{idx:>3}/{len(entries)}] {path} ({size:,} B) -> {sha[:10]}")
 
-    # ---- trees --------------------------------------------------------------
     dirs: set[str] = set()
     for path in uploaded:
         parts = path.split("/")
@@ -203,11 +173,12 @@ def main() -> int:
                 continue
             rest = path[len(prefix):]
             if "/" not in rest:
-                items.append({"path": rest, "mode": modes[path], "type": "blob", "sha": uploaded[path]})
+                items.append({"path": rest, "mode": modes[path], "type": "blob",
+                              "sha": uploaded[path]})
         for name in sorted({p[len(prefix):].split("/")[0] for p in dirs if p.startswith(prefix)}):
             items.append({"path": name, "mode": "040000", "type": "tree",
                           "sha": tree_of[f"{prefix}{name}"]})
-        status, res = api("POST", f"{API}/repos/{login}/{args.repo}/git/trees", token, {"tree": items})
+        status, res = api("POST", f"{API}/repos/{repo}/git/trees", token, {"tree": items})
         if status != 201:
             sys.exit(f"FAIL: tree '{dirpath or '.'}' -> {status}: {res.get('message')}")
         return res["sha"]
@@ -216,47 +187,150 @@ def main() -> int:
         tree_of[dirpath] = make_tree(dirpath)
     root_sha = make_tree("")
     print(f"root tree     : {root_sha[:12]} ({len(dirs)} directories)")
+    return uploaded, root_sha
 
-    # ---- commit + ref -------------------------------------------------------
-    parents: list[str] = []
-    status, ref = api("GET", f"{API}/repos/{login}/{args.repo}/git/ref/heads/{branch}", token)
-    if status == 200:
-        parents = [ref["object"]["sha"]]
-        print(f"parent        : {parents[0][:12]}")
-    elif status != 404:
-        sys.exit(f"FAIL: read ref -> {status}: {ref.get('message')}")
 
-    identity = {**who, "date": when}
-    status, res = api("POST", f"{API}/repos/{login}/{args.repo}/git/commits", token,
-                      {"message": message, "tree": root_sha, "parents": parents,
-                       "author": identity, "committer": identity})
-    if status != 201:
-        sys.exit(f"FAIL: commit -> {status}: {res.get('message')}")
-    new_sha = res["sha"]
-    print(f"commit        : {new_sha}")
+def revision_info(root: str, ref: str) -> dict:
+    def text(*a) -> str:
+        proc = subprocess.run(["git", "-C", root, *a], capture_output=True,
+                              timeout=120, encoding="utf-8", errors="replace")
+        if proc.returncode != 0:
+            sys.exit(f"FAIL: git {' '.join(a)}: {(proc.stderr or '')[:300]}")
+        return proc.stdout
 
+    name = text("log", "-1", "--pretty=%an", ref).strip()
+    mail = text("log", "-1", "--pretty=%ae", ref).strip()
+    stamp = text("log", "-1", "--pretty=%cI", ref).strip()
+    return {
+        "sha": text("rev-parse", ref).strip(),
+        "message": text("log", "-1", "--pretty=%B", ref).rstrip("\n"),
+        "author": {"name": name, "email": mail,
+                   "date": datetime.fromisoformat(stamp).astimezone(timezone.utc)
+                           .strftime("%Y-%m-%dT%H:%M:%SZ")},
+        "parents": text("log", "-1", "--pretty=%P", ref).strip().split(),
+    }
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Publish local git history to GitHub via the API")
+    ap.add_argument("--repo", default=os.environ.get("XINXUAN_REPO", "xinxuan"))
+    ap.add_argument("--branch", default="")
+    ap.add_argument("--ref", default="HEAD", help="local revision to publish (default HEAD)")
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--history", type=int, default=1, metavar="N",
+                    help="publish the last N local commits, rebuilding the remote branch "
+                         "so its history matches local exactly (default 1 = stack one commit)")
+    ap.add_argument("--prune-history", action="store_true",
+                    help="publish --history commits as the entire remote history, dropping "
+                         "leftover placeholder commits; only safe on a brand-new repo")
+    args = ap.parse_args()
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if args.history > 1:
+        args.prune_history = True
+
+    def text(*a) -> str:
+        proc = subprocess.run(["git", "-C", root, *a], capture_output=True,
+                              timeout=300, encoding="utf-8", errors="replace")
+        if proc.returncode != 0:
+            sys.exit(f"FAIL: git {' '.join(a)}: {(proc.stderr or '')[:300]}")
+        return proc.stdout
+
+    branch = args.branch or text("branch", "--show-current").strip() or "main"
+    user, token = token_from_gcm()
+    status, me = api("GET", f"{API}/user", token)
+    if status != 200:
+        sys.exit(f"FAIL: GET /user -> {status}: {me.get('message')}")
+    login = me["login"]
+    print(f"authenticated as {login}")
+
+    status, repo = api("GET", f"{API}/repos/{login}/{args.repo}", token)
+    if status != 200:
+        sys.exit(f"FAIL: repository {login}/{args.repo} unreachable -> {status}: {repo.get('message')}")
+    print(f"repository    : {repo['html_url']} (private={repo['private']})")
+
+    if subprocess.run(["git", "-C", root, "rev-parse", "--verify", "HEAD"],
+                      capture_output=True).returncode != 0:
+        sys.exit("FAIL: no commits yet, commit locally first")
+
+    # Oldest first, so each published commit can point at the previous one.
+    revs = text("rev-list", "--reverse", f"-{args.history}", args.ref).split()
+    tip = revision_info(root, revs[-1])
+    print(f"to publish    : {len(revs)} commit(s) on branch {branch}")
+
+    # ---- dry run: no writes at all -----------------------------------------
+    if args.dry_run:
+        for idx, rev in enumerate(revs, 1):
+            info = revision_info(root, rev)
+            files = [l for l in text("ls-tree", "-r", "--long", rev).splitlines()
+                     if l.split("\t")[0].split()[1] == "blob"]
+            total = sum(int(l.split()[3]) for l in files)
+            print(f"  [{idx}] {info['sha'][:10]}  {info['message'].splitlines()[0][:60]}")
+            print(f"       {len(files)} files, {total / 1e6:.2f} MB, "
+                  f"{len(info['parents'])} parent(s) in local history")
+        print("DRY_RUN_OK")
+        return 0
+
+    # ---- one commit at a time ----------------------------------------------
+    published: dict[str, str] = {}
+    remote_parent: list[str] = []
+    if not args.prune_history:
+        status, ref = api("GET", f"{API}/repos/{login}/{args.repo}/git/ref/heads/{branch}", token)
+        if status == 200:
+            remote_parent = [ref["object"]["sha"]]
+            print(f"parent        : {remote_parent[0][:12]}")
+        elif status != 404:
+            sys.exit(f"FAIL: read ref -> {status}: {ref.get('message')}")
+    else:
+        print(f"prune-history : remote {branch} will be rewritten to the "
+              f"{len(revs)} local commit(s)")
+
+    new_sha = ""
+    for idx, rev in enumerate(revs, 1):
+        info = revision_info(root, rev)
+        uploaded, root_sha = publish_tree(root, f"{login}/{args.repo}", token, rev,
+                                          label=f"[{idx}/{len(revs)}] ")
+        parents = [new_sha] if new_sha else remote_parent
+        status, res = api("POST", f"{API}/repos/{login}/{args.repo}/git/commits", token,
+                          {"message": info["message"], "tree": root_sha, "parents": parents,
+                           "author": info["author"], "committer": info["author"]})
+        if status != 201:
+            sys.exit(f"FAIL: commit -> {status}: {res.get('message')}")
+        new_sha = res["sha"]
+        print(f"commit        : {new_sha}  <- local {info['sha'][:10]}")
+        published = uploaded
+
+    # ---- ref ----------------------------------------------------------------
     status, res = api("POST", f"{API}/repos/{login}/{args.repo}/git/refs", token,
                       {"ref": f"refs/heads/{branch}", "sha": new_sha})
     if status == 422:
-        # Ref already exists: normal case is a fast-forward. Force only when the
-        # remote has no parent to build on (first publication into an
-        # auto-initialised repository).
         status, res = api("PATCH", f"{API}/repos/{login}/{args.repo}/git/refs/heads/{branch}", token,
-                          {"sha": new_sha, "force": not parents})
+                          {"sha": new_sha, "force": args.prune_history or not remote_parent})
     if status not in (200, 201):
         sys.exit(f"FAIL: ref update -> {status}: {res.get('message')}")
 
     # ---- verify -------------------------------------------------------------
     status, full = api("GET", f"{API}/repos/{login}/{args.repo}/git/trees/{branch}?recursive=1", token)
     remote = {e["path"]: e["sha"] for e in full.get("tree", []) if e["type"] == "blob"}
-    same = remote == uploaded
+    same = remote == published
     print("=== VERIFY ===")
-    print("remote files  :", len(remote), "local:", len(uploaded))
+    print("files         :", len(remote), "remote ==", len(published), "local")
     print("blobs equal   :", same)
     print("branch url    :", f"{repo['html_url']}/tree/{branch}")
     if not same:
-        print("  missing:", sorted(set(uploaded) - set(remote)))
-        print("  extra  :", sorted(set(remote) - set(uploaded)))
+        print("  missing:", sorted(set(published) - set(remote)))
+        print("  extra  :", sorted(set(remote) - set(published)))
+        return 1
+
+    status, info = api("GET", f"{API}/repos/{login}/{args.repo}/commits/{new_sha}", token)
+    got_parents = [p["sha"] for p in info.get("parents", [])] if status == 200 else []
+    expect_parents = [] if args.prune_history else remote_parent
+    print("remote parents:", [p[:12] for p in got_parents] or "none (root commit)")
+    print("local tip     :", tip["sha"][:10], "message:",
+          tip["message"].splitlines()[0][:60])
+    if got_parents != expect_parents:
+        print("FAIL: remote parents", [p[:10] for p in got_parents],
+              "!= expected", [p[:10] for p in expect_parents])
         return 1
     print("PUBLISH_OK")
     return 0
