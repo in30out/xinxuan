@@ -54,7 +54,18 @@ GCM = os.environ.get("GCM_PATH", r"C:\Tools\Git\mingw64\bin\git-credential-manag
 API = "https://api.github.com"
 
 
-def api(method: str, url: str, token: str, body=None, timeout: int = 180):
+def api(method: str, url: str, token: str, body=None, timeout: int = 180,
+        attempts: int = 4):
+    """调用 GitHub REST API，带重试。
+
+    为什么要重试：本沙箱经代理出口，实测会出现 `RemoteDisconnected: Remote end
+    closed connection without response`（一次 59 文件发布在第 31 个 blob 上失败，
+    而同一时刻 `/rate_limit` 显示 5000/5000 未用，说明不是配额问题）。GitHub 的
+    blob/tree/commit 创建都是内容寻址的幂等操作，重发安全。
+    不重试 4xx（除 429）：那是请求本身有问题，重发也没用。
+    """
+    import time as _time
+
     data = json.dumps(body).encode("utf-8") if body is not None else None
     headers = {
         "User-Agent": "xinxuan-publisher",
@@ -62,18 +73,30 @@ def api(method: str, url: str, token: str, body=None, timeout: int = 180):
         "Authorization": f"Bearer {token}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    req = urllib.request.Request(url, data=data, method=method, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.status, json.load(resp)
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", "replace")
+    last = (0, {"message": "not attempted"})
+    for attempt in range(1, attempts + 1):
+        req = urllib.request.Request(url, data=data, method=method, headers=headers)
         try:
-            return exc.code, json.loads(raw)
-        except json.JSONDecodeError:
-            return exc.code, {"message": raw[:500]}
-    except Exception as exc:  # noqa: BLE001 - surface the reason, never crash opaquely
-        return 0, {"message": f"{type(exc).__name__}: {exc}"}
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.status, json.load(resp)
+        except urllib.error.HTTPError as exc:
+            raw = exc.read().decode("utf-8", "replace")
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                payload = {"message": raw[:500]}
+            last = (exc.code, payload)
+            # 4xx 是请求本身的问题；429 / 5xx 值得重试
+            if exc.code < 500 and exc.code != 429:
+                return last
+        except Exception as exc:  # noqa: BLE001 - surface the reason, never crash opaquely
+            last = (0, {"message": f"{type(exc).__name__}: {exc}"})
+        if attempt < attempts:
+            delay = 2 ** attempt  # 2s, 4s, 8s
+            print(f"    [retry {attempt}/{attempts - 1}] {last[1].get('message', last[1])} "
+                  f"→ {delay}s 后重试")
+            _time.sleep(delay)
+    return last
 
 
 def token_from_gcm() -> tuple[str, str]:
