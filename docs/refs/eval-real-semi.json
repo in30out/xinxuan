@@ -1,0 +1,159 @@
+{
+  "csv": "C:\\MyFiles\\Develop\\dsh\\work_1\\data\\chips_real_semi.csv",
+  "rows": 20890,
+  "top": 5,
+  "index_build_ms": 4514.1,
+  "part_cases": {
+    "total": 1,
+    "skipped": 6,
+    "hit_top1": 0,
+    "hit_topk": 1,
+    "pin_hit_top1": 0,
+    "pin_total": 1,
+    "top1_ok": 0,
+    "top1_expected_present": 0,
+    "order_ok": 0,
+    "order_total": 0,
+    "violations": 0,
+    "rows": 5
+  },
+  "nl_cases": {
+    "total": 9,
+    "cat_ok": 0,
+    "pkg_ok": 2,
+    "pkg_total": 2,
+    "empty": 1
+  },
+  "latencies_ms": [
+    39.78
+  ],
+  "part_detail": [
+    {
+      "query": "STM32F103C8T6",
+      "verdict": "SKIPPED",
+      "why": "query part not present in this CSV"
+    },
+    {
+      "query": "W25Q64JVSSIQ",
+      "verdict": "SKIPPED",
+      "why": "query part not present in this CSV"
+    },
+    {
+      "query": "CH340G",
+      "verdict": "SKIPPED",
+      "why": "query part not present in this CSV"
+    },
+    {
+      "query": "SP3232EEN",
+      "verdict": "SKIPPED",
+      "why": "no labelled substitute present in this CSV"
+    },
+    {
+      "query": "TLC555CDR",
+      "verdict": "SKIPPED",
+      "why": "query part not present in this CSV"
+    },
+    {
+      "query": "SP3485EN",
+      "note": "3.3V RS-485。MAX3485ESA 同封装同脚位同电压区间，是唯一真正 Pin-to-Pin 的候选；MAX485ESA+ 是 5V 器件，电压零交集，属「参考替代」而非 pin 替代",
+      "verdict": "PASS",
+      "expected_pins": [
+        "MAX3485ESA"
+      ],
+      "got_top": [
+        "MAX3485ESA-MS",
+        "SP485EN-MS",
+        "MAX485ESA-MS",
+        "SP3485EEN",
+        "MAX3485ESA"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 39.78,
+      "top1": "MAX3485ESA-MS"
+    },
+    {
+      "query": "AMS1117-3.3",
+      "verdict": "SKIPPED",
+      "why": "no labelled substitute present in this CSV"
+    }
+  ],
+  "nl_detail": [
+    {
+      "query": "3.3V 低功耗 LDO SOT-23-5",
+      "verdict": "FAIL",
+      "want_category": "线性稳压器LDO",
+      "got_category": "Power Management",
+      "want_pkg": "SOT235",
+      "got_pkg": "SOT-23-5",
+      "top1": "MIC5205-3.3YM5-MS"
+    },
+    {
+      "query": "RS485 收发器 SOIC-8",
+      "verdict": "FAIL",
+      "want_category": "接口芯片",
+      "got_category": "Interface ICs",
+      "want_pkg": "SOIC8",
+      "got_pkg": "SOIC8(S)",
+      "top1": "CS485S"
+    },
+    {
+      "query": "RS232 电平转换",
+      "verdict": "FAIL",
+      "want_category": "接口芯片",
+      "got_category": "Interface ICs",
+      "want_pkg": null,
+      "got_pkg": "SOP-16",
+      "top1": "SP3232AECM/TR"
+    },
+    {
+      "query": "24V 转 5V DC-DC",
+      "verdict": "FAIL",
+      "want_category": "DC-DC变换器",
+      "got_category": "Power Management",
+      "want_pkg": null,
+      "got_pkg": "TO-252-5",
+      "top1": "TD1433TR"
+    },
+    {
+      "query": "16位 ADC 四通道",
+      "verdict": "FAIL",
+      "want_category": "数据转换器",
+      "got_category": "Data Converters",
+      "want_pkg": null,
+      "got_pkg": "SOIC-16-300mil",
+      "top1": "HCPL-786J-500E"
+    },
+    {
+      "query": "EEPROM I2C 32Kbit",
+      "verdict": "FAIL",
+      "want_category": "存储器",
+      "got_category": "Memory",
+      "want_pkg": null,
+      "got_pkg": "SOP-8",
+      "top1": "24C32-HXY"
+    },
+    {
+      "query": "运放 SOIC-8",
+      "verdict": "FAIL",
+      "why": "empty result"
+    },
+    {
+      "query": "光耦 隔离 DIP-4",
+      "verdict": "FAIL",
+      "want_category": "光耦",
+      "got_category": "Optoelectronics",
+      "want_pkg": null,
+      "got_pkg": "DIP-4",
+      "top1": "LTV-814-B"
+    },
+    {
+      "query": "MOSFET N沟道 SOT-23",
+      "verdict": "FAIL",
+      "want_category": "MOSFET",
+      "got_category": "Transistors and Thyristors",
+      "want_pkg": null,
+      "got_pkg": "SOT-23",
+      "top1": "SI2306A"
+    }
+  ]
+}

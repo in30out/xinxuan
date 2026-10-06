@@ -1,0 +1,90 @@
+part_no,manufacturer,category,package,pin_count,vcc_min,vcc_max,temp_min,temp_max,stock,price_cny,lead_time_days,lifecycle,description,datasheet_url,p2p_with
+STM32F103C8T6,STMicroelectronics,微控制器MCU,LQFP48,48,2.0,3.6,-40,85,12500,12.5,7,量产,ARM Cortex-M3 72MHz 64KB Flash 20KB RAM 通用型MCU 支持SWD调试,https://www.st.com/resource/en/datasheet/stm32f103c8.pdf,GD32F103C8T6;CH32F103C8T6;APM32F103C8T6;CH32V203C8T6
+GD32F103C8T6,兆易创新GigaDevice,微控制器MCU,LQFP48,48,2.6,3.6,-40,85,8600,8.9,10,量产,Cortex-M3 108MHz 64KB Flash 与STM32F103引脚兼容 可直接替换,https://www.gigadevice.com.cn/product/mcu/gd32f103,STM32F103C8T6;APM32F103C8T6;CH32F103C8T6
+CH32F103C8T6,沁恒WCH,微控制器MCU,LQFP48,48,2.7,5.5,-40,85,4200,6.5,15,量产,Cortex-M3 72MHz 64KB Flash 引脚兼容STM32F103 支持USB2.0,https://www.wch.cn/products/CH32F103.html,STM32F103C8T6;GD32F103C8T6;APM32F103C8T6
+CH32V203C8T6,沁恒WCH,微控制器MCU,LQFP48,48,2.0,3.6,-40,85,3100,5.8,20,量产,RISC-V4B 144MHz 64KB Flash LQFP48 与STM32F103引脚兼容,https://www.wch.cn/products/CH32V203.html,STM32F103C8T6
+APM32F103C8T6,极海Geehy,微控制器MCU,LQFP48,48,2.0,3.6,-40,85,5400,9.2,12,量产,Cortex-M3 96MHz 64KB Flash 兼容STM32F103C8T6硬件设计,https://www.geehy.com/apm32/apm32f103,STM32F103C8T6;GD32F103C8T6;CH32F103C8T6
+STM32F407VGT6,STMicroelectronics,微控制器MCU,LQFP100,100,1.8,3.6,-40,85,900,42.0,25,NRND,Cortex-M4 168MHz 1MB Flash 192KB RAM 不推荐新设计,https://www.st.com/resource/en/datasheet/stm32f407vg.pdf,
+AT32F403AVGT7,雅特力Artery,微控制器MCU,LQFP100,100,2.6,3.6,-40,85,1500,28.0,18,量产,Cortex-M4 240MHz 1MB Flash 兼容STM32F407引脚定义,https://www.arterytek.com/en/product/AT32F403A.jsp,
+ESP32-WROOM-32E,乐鑫Espressif,微控制器MCU,SMD-38,38,3.0,3.6,-40,85,7800,18.6,14,量产,Wi-Fi+蓝牙双模模组 240MHz双核 4MB Flash 38脚,https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_datasheet_en.pdf,
+ESP32-S3-WROOM-1-N8R2,乐鑫Espressif,微控制器MCU,SMD-41,41,3.0,3.6,-40,85,2600,26.0,21,量产,Wi-Fi+BLE5 模组 8MB Flash 2MB PSRAM 41脚与ESP32不兼容,https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf,
+ESP32-C3-MINI-1,乐鑫Espressif,微控制器MCU,SMD-53,53,3.0,3.6,-40,85,3300,14.2,16,量产,RISC-V单核 160MHz Wi-Fi+BLE5 模组 邮票孔封装,https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf,
+STC8H8K64U-45I-LQFP48,STC宏晶,微控制器MCU,LQFP48,48,1.9,5.5,-40,85,12000,4.2,6,量产,8051内核 45MHz 64KB Flash 宽电压2.0-5.5V,https://www.stcai.com/cp_stc8h,
+N76E003AT20,新唐Nuvoton,微控制器MCU,TSSOP20,20,2.4,5.5,-40,85,9000,1.35,5,量产,8051内核 16MHz 18KB Flash TSSOP20 小封装,https://www.nuvoton.com/products/microcontrollers/8bit-8051-mcus/n76e003/,
+AMS1117-3.3,AMS,线性稳压器LDO,SOT-223,3,4.75,15.0,-40,125,86000,0.32,3,量产,1A低压差线性稳压器 固定3.3V输出 SOT-223,http://www.advanced-monolithic.com/pdf/ds1117.pdf,LM1117-3.3;LD1117S33TR
+AMS1117-5.0,AMS,线性稳压器LDO,SOT-223,3,6.5,15.0,-40,125,52000,0.31,3,量产,1A低压差线性稳压器 固定5.0V输出 SOT-223,http://www.advanced-monolithic.com/pdf/ds1117.pdf,
+LM1117-3.3,TI,线性稳压器LDO,SOT-223,3,4.75,15.0,-40,125,18000,1.05,10,量产,800mA LDO 固定3.3V 可替代AMS1117-3.3,https://www.ti.com/lit/ds/symlink/lm1117.pdf,AMS1117-3.3;LD1117S33TR
+SPX3819M5-L-3-3,MaxLinear,线性稳压器LDO,SOT-23-5,5,2.5,16.0,-40,125,6400,1.8,12,量产,500mA低噪声LDO 3.3V SOT-23-5带使能脚,https://www.maxlinear.com/ds/spx3819.pdf,
+XC6206P332MR,Torex,线性稳压器LDO,SOT-23,3,1.8,6.0,-40,85,24000,0.48,8,量产,250mA LDO 3.3V 低静态电流 SOT-23,https://www.torexsemi.com/file/xc6206/XC6206.pdf,
+RT9013-33GB,Richtek,线性稳压器LDO,SOT-23-5,5,2.2,5.5,-40,85,9500,0.62,9,量产,500mA超低噪声LDO 3.3V SOT-23-5,https://www.richtek.com/assets/product_file/RT9013/DS9013-16.pdf,
+ME6211C33M5G,南京微盟MICRONE,线性稳压器LDO,SOT-23-5,5,1.8,6.5,-40,85,33000,0.28,4,量产,500mA LDO 3.3V 高PSRR SOT-23-5,https://www.microne.com.cn/product/ME6211,
+TPS7A4901DGNR,TI,线性稳压器LDO,MSOP-8,8,3.0,36.0,-40,125,1200,12.8,30,量产,150mA超低噪声宽压LDO 可调输出 MSOP-8,https://www.ti.com/lit/ds/symlink/tps7a4901.pdf,
+LM7805,STMicroelectronics,线性稳压器LDO,TO-220,3,7.5,35.0,-40,125,15000,1.2,6,量产,1.5A三端固定稳压器 5V TO-220直插,https://www.st.com/resource/en/datasheet/lm78.pdf,
+AZ1117-1.8,DIODES,线性稳压器LDO,SOT-223,3,3.0,15.0,-40,125,11000,0.35,5,量产,1A LDO 1.8V输出 SOT-223,https://www.diodes.com/assets/Datasheets/AZ1117.pdf,
+LD1117S33TR,STMicroelectronics,线性稳压器LDO,SOT-223,3,4.75,15.0,-40,125,0,0.95,0,EOL,1A LDO 3.3V 已停产 最后购买LF,https://www.st.com/resource/en/datasheet/ld1117.pdf,AMS1117-3.3;LM1117-3.3
+AMS1117-1.8,AMS,线性稳压器LDO,SOT-223,3,3.0,15.0,-40,125,300,0.4,45,NRND,1A LDO 1.8V 不推荐新设计 供货紧张,http://www.advanced-monolithic.com/pdf/ds1117.pdf,
+LM2596S-5.0,TI,DC-DC变换器,TO-263-5,5,4.5,40.0,-40,125,6200,3.6,12,量产,3A降压开关稳压器 固定5V 150kHz TO-263,https://www.ti.com/lit/ds/symlink/lm2596.pdf,
+LM2596S-ADJ,TI,DC-DC变换器,TO-263-5,5,4.5,40.0,-40,125,4800,3.55,12,量产,3A降压开关稳压器 可调输出 150kHz,https://www.ti.com/lit/ds/symlink/lm2596.pdf,
+MP1584EN,Monolithic Power Systems,DC-DC变换器,SOIC-8,8,4.5,28.0,-40,85,26000,1.15,8,量产,3A高频降压 1.5MHz 可调输出 SOIC-8,https://www.monolithicpower.com/en/mp1584.html,
+MP2307DN,MPS,DC-DC变换器,SOIC-8,8,4.75,23.0,-40,85,17000,1.05,9,量产,3A同步降压 340kHz SOIC-8,https://www.monolithicpower.com/en/mp2307.html,
+TPS5430DDA,TI,DC-DC变换器,SOIC-8,8,5.5,36.0,-40,125,2400,9.6,22,量产,3A降压 500kHz 宽输入 带使能,https://www.ti.com/lit/ds/symlink/tps5430.pdf,
+XL4015E1,芯龙XLSEMI,DC-DC变换器,TO-263-5,5,8.0,36.0,-40,125,8800,1.9,6,量产,5A降压 180kHz 可调输出 TO-263-5,http://www.xlsemi.com/datasheet/XL4015%20datasheet.pdf,
+MT3608,西安航天民芯Aerosemi,DC-DC变换器,SOT-23-6,6,2.0,24.0,-40,85,31000,0.55,5,量产,2A升压 1.2MHz SOT-23-6,https://www.aerosemi.com/wp-content/uploads/2017/05/MT3608.pdf,
+SY7201ABC,Silergy,DC-DC变换器,SOT-23-6,6,2.5,5.5,-40,85,5600,0.85,10,量产,升压变换器 1.2MHz 用于背光驱动,https://www.silergy.com/productsview/SY7201,
+LM358DR,TI,运算放大器,SOIC-8,8,3.0,32.0,0,70,42000,0.42,5,量产,双运放 通用型 商业级0到70度 SOIC-8,https://www.ti.com/lit/ds/symlink/lm358.pdf,
+LM358N,STMicroelectronics,运算放大器,DIP-8,8,3.0,32.0,0,70,9000,0.6,7,量产,双运放 DIP-8直插 商业级,https://www.st.com/resource/en/datasheet/lm158.pdf,
+LM2904DR,TI,运算放大器,SOIC-8,8,3.0,32.0,-40,125,28000,0.52,6,量产,双运放 工业级-40到125度 引脚兼容LM358,https://www.ti.com/lit/ds/symlink/lm2904.pdf,
+MCP6002T-I/SN,Microchip,运算放大器,SOIC-8,8,1.8,6.0,-40,125,16000,1.6,12,量产,双运放 1MHz 轨到轨 低功耗 SOIC-8,https://ww1.microchip.com/downloads/en/DeviceDoc/MCP6001-1R-1U-2-4-Data-Sheet-DS20001733L.pdf,
+OPA2333AIDR,TI,运算放大器,SOIC-8,8,1.8,5.5,-40,125,3200,13.5,28,量产,双运放 零漂移 低功耗 轨到轨 SOIC-8,https://www.ti.com/lit/ds/symlink/opa2333.pdf,
+TS321ILT,STMicroelectronics,运算放大器,SOT-23-5,5,3.0,32.0,-40,125,7600,0.95,10,量产,单运放 SOT-23-5 小封装,https://www.st.com/resource/en/datasheet/ts321.pdf,
+NE5532DR,TI,运算放大器,SOIC-8,8,6.0,40.0,-40,85,12000,1.1,8,量产,双低噪声运放 音频前级 SOIC-8,https://www.ti.com/lit/ds/symlink/ne5532.pdf,
+AD620ARZ,ADI,运算放大器,SOIC-8,8,4.6,36.0,-40,85,900,26.0,35,量产,仪表放大器 高精度 增益可编程 SOIC-8,https://www.analog.com/media/en/technical-documentation/data-sheets/AD620.pdf,
+INA128UA,TI,运算放大器,SOIC-8,8,4.5,36.0,-40,125,1500,32.0,32,量产,仪表放大器 微功耗 高共模抑制比,https://www.ti.com/lit/ds/symlink/ina128.pdf,
+AO3400A,Alpha and Omega Semiconductor,MOSFET,SOT-23,3,1.8,12.0,-55,150,125000,0.16,4,量产,N沟道30V 5.7A SOT-23 逻辑电平,https://www.aosmd.com/res/data_sheets/AO3400A.pdf,
+SI2302CDS-T1-GE3,Vishay,MOSFET,SOT-23,3,1.5,12.0,-55,150,68000,0.22,6,量产,N沟道20V 2.5A SOT-23 逻辑电平,https://www.vishay.com/docs/70610/si2302cds.pdf,
+IRLML2502TRPBF,Infineon,MOSFET,SOT-23,3,1.8,12.0,-55,150,21000,0.35,9,量产,N沟道20V 4.2A SOT-23 逻辑电平,https://www.infineon.com/dgdl/irlml2502pbf.pdf,
+AO3401A,Alpha and Omega Semiconductor,MOSFET,SOT-23,3,1.8,12.0,-55,150,95000,0.17,4,量产,P沟道负30V 负4A SOT-23 逻辑电平,https://www.aosmd.com/res/data_sheets/AO3401A.pdf,
+IRF3205PBF,Infineon,MOSFET,TO-220AB,3,1.8,55.0,-55,175,1400,4.8,22,量产,N沟道55V 110A 大功率 TO-220,https://www.infineon.com/dgdl/irf3205pbf.pdf,
+CSD18532Q5B,TI,MOSFET,VSON-8,8,4.5,60.0,-55,150,600,6.9,40,NRND,N沟道60V 100A 低导通电阻 VSON-8 不推荐新设计,https://www.ti.com/lit/ds/symlink/csd18532q5b.pdf,
+AOD4184A,Alpha and Omega Semiconductor,MOSFET,TO-252,3,2.5,30.0,-55,175,5200,0.72,8,量产,N沟道30V 30A TO-252贴片,https://www.aosmd.com/res/data_sheets/AOD4184A.pdf,
+2N7002K,onsemi,MOSFET,SOT-23,3,1.8,60.0,-55,150,88000,0.09,3,量产,N沟道60V 0.3A 小信号MOS SOT-23,https://www.onsemi.com/pdf/datasheet/2n7002k-d.pdf,
+74HC595D,Nexperia,逻辑器件,SOIC-16,16,2.0,6.0,-40,125,26000,0.85,7,量产,8位串行输入移位寄存器 三态输出 SOIC-16,https://assets.nexperia.com/documents/data-sheet/74HC_HCT595.pdf,74HC595PW
+74HC595PW,Nexperia,逻辑器件,TSSOP-16,16,2.0,6.0,-40,125,12000,0.9,9,量产,8位移位寄存器 TSSOP-16 封装更薄,https://assets.nexperia.com/documents/data-sheet/74HC_HCT595.pdf,74HC595D
+74HC04D,Nexperia,逻辑器件,SOIC-14,14,2.0,6.0,-40,125,19000,0.62,6,量产,六路反相器 SOIC-14,https://assets.nexperia.com/documents/data-sheet/74HC_HCT04.pdf,
+74HC138D,Nexperia,逻辑器件,SOIC-16,16,2.0,6.0,-40,125,8600,0.78,8,量产,3到8线译码器 SOIC-16,https://assets.nexperia.com/documents/data-sheet/74HC_HCT138.pdf,
+74HC245D,Nexperia,逻辑器件,SOIC-20,20,2.0,6.0,-40,125,7400,1.05,8,量产,八路总线收发器 SOIC-20,https://assets.nexperia.com/documents/data-sheet/74HC_HCT245.pdf,
+74LVC1G17GW,Nexperia,逻辑器件,TSSOP-5,5,1.65,5.5,-40,125,45000,0.35,5,量产,单路施密特触发缓冲器 TSSOP-5,https://assets.nexperia.com/documents/data-sheet/74LVC1G17.pdf,
+SN74LVC16T245DGGR,TI,逻辑器件,TSSOP-48,48,1.65,5.5,-40,125,900,12.0,26,量产,16位双电源总线收发器 TSSOP-48,https://www.ti.com/lit/ds/symlink/sn74lvc16t245.pdf,
+MAX3232ESE+,Maxim,接口芯片,SOIC-16,16,3.0,5.5,-40,85,15000,3.2,12,量产,RS-232收发器双路 3V到5V宽压 SOIC-16,https://www.analog.com/media/en/technical-documentation/data-sheets/MAX3222-MAX3241.pdf,SP3232EEN
+SP3232EEN,Sipex,接口芯片,SOIC-16,16,3.0,5.5,-40,85,8200,1.6,10,量产,RS-232收发器 兼容MAX3232引脚,https://www.exar.com/ds/sp3232e.pdf,MAX3232ESE+
+CH340G,沁恒WCH,接口芯片,SOIC-16,16,4.5,5.5,-40,85,36000,1.1,6,量产,USB转串口 内置晶振 需外部电容 SOIC-16,https://www.wch.cn/downloads/CH340DS1_PDF.html,
+CH340C,沁恒WCH,接口芯片,SOIC-16,16,4.5,5.5,-40,85,28000,1.25,6,量产,USB转串口 内置晶振免外部电容 引脚兼容CH340G,https://www.wch.cn/downloads/CH340DS1_PDF.html,
+CH340N,沁恒WCH,接口芯片,SOP-8,8,4.5,5.5,-40,85,19000,1.3,7,量产,USB转串口 8脚精简封装 省PCB面积,https://www.wch.cn/downloads/CH340DS1_PDF.html,
+CP2102-GMR,Silicon Labs,接口芯片,QFN-28,28,3.0,3.6,-40,85,4200,8.5,25,量产,USB转UART单芯片 QFN-28 需外部电源,https://www.silabs.com/documents/public/data-sheets/cp2102-9.pdf,
+TJA1050T,NXP,接口芯片,SOIC-8,8,4.75,5.25,-40,125,6800,2.4,14,量产,CAN收发器 高速1Mbps 5V供电 SOIC-8,https://www.nxp.com/docs/en/data-sheet/TJA1050.pdf,
+SN65HVD230DR,TI,接口芯片,SOIC-8,8,3.0,3.6,-40,85,5400,4.1,18,量产,3.3V CAN收发器 引脚兼容TJA1050,https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf,
+MAX485ESA+,Maxim,接口芯片,SOIC-8,8,4.75,5.25,-40,85,9200,3.6,15,量产,RS-485 RS-422收发器 低功耗 SOIC-8,https://www.analog.com/media/en/technical-documentation/data-sheets/MAX481-MAX491.pdf,
+SP3485EN,Sipex,接口芯片,SOIC-8,8,3.0,3.6,-40,85,12000,0.95,9,量产,3.3V RS-485收发器 引脚兼容MAX485,https://www.exar.com/ds/sp3485.pdf,
+MAX3485ESA,Maxim,接口芯片,SOIC-8,8,3.0,3.6,-40,85,3100,5.8,20,量产,3.3V RS-485收发器 低功耗 SOIC-8,https://www.analog.com/media/en/technical-documentation/data-sheets/MAX3483-MAX3491.pdf,
+W25Q64JVSSIQ,Winbond,存储器,SOIC-8,8,2.7,3.6,-40,85,22000,2.3,10,量产,64Mbit SPI NOR Flash SOIC-8,https://www.winbond.com/resource-files/w25q64jv%20revj%2003272018%20plus.pdf,
+W25Q128JVSIQ,Winbond,存储器,SOIC-8,8,2.7,3.6,-40,85,9800,3.8,12,量产,128Mbit SPI NOR Flash SOIC-8,https://www.winbond.com/resource-files/w25q128jv%20revf%2003272018%20plus.pdf,
+W25Q32JVSSIQ,Winbond,存储器,SOIC-8,8,2.7,3.6,-40,85,26000,1.65,9,量产,32Mbit SPI NOR Flash SOIC-8,https://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf,
+GD25Q64ESIG,兆易创新GigaDevice,存储器,SOIC-8,8,2.7,3.6,-40,85,14000,2.1,11,量产,64Mbit SPI NOR Flash 兼容W25Q64 SOIC-8,https://www.gigadevice.com.cn/product/flash/gd25q64e,
+AT24C02C-SSHM-T,Microchip,存储器,SOIC-8,8,1.7,5.5,-40,85,31000,0.55,8,量产,2Kbit I2C EEPROM SOIC-8 兼容24C02,https://ww1.microchip.com/downloads/en/DeviceDoc/AT24C01C-AT24C16C-Data-Sheet-DS20006088A.pdf,
+AT24C32D-SSHM-T,Microchip,存储器,SOIC-8,8,1.7,5.5,-40,85,11000,0.85,10,量产,32Kbit I2C EEPROM SOIC-8,https://ww1.microchip.com/downloads/en/DeviceDoc/AT24C32D-AT24C64D-Data-Sheet-DS20006235A.pdf,
+NE555DR,TI,定时器,SOIC-8,8,4.5,16.0,0,70,18000,0.55,7,量产,经典555定时器 商业级0到70度 SOIC-8,https://www.ti.com/lit/ds/symlink/ne555.pdf,TLC555CDR;ICM7555IBAZ
+NE555P,TI,定时器,DIP-8,8,4.5,16.0,0,70,9000,0.75,8,量产,经典555定时器 直插DIP-8,https://www.ti.com/lit/ds/symlink/ne555.pdf,
+TLC555CDR,TI,定时器,SOIC-8,8,2.0,15.0,-40,85,6400,1.9,12,量产,CMOS定时器 低功耗 兼容NE555引脚,https://www.ti.com/lit/ds/symlink/tlc555.pdf,NE555DR;ICM7555IBAZ
+ICM7555IBAZ,瑞萨Renesas,定时器,SOIC-8,8,2.0,18.0,-40,85,2100,6.4,28,量产,CMOS定时器 低功耗 高阻抗 SOIC-8,https://www.renesas.com/us/en/document/dst/icm7555-icm7556-datasheet,NE555DR;TLC555CDR
+DS1302Z+,Maxim,定时器,SOIC-8,8,2.0,5.5,-40,85,4300,4.2,20,量产,实时时钟 涓流充电 三线接口 SOIC-8,https://www.analog.com/media/en/technical-documentation/data-sheets/DS1302.pdf,
+PCF8563T,NXP,定时器,SOIC-8,8,1.8,5.5,-40,85,7000,3.1,16,量产,I2C实时时钟 低功耗 SOIC-8,https://www.nxp.com/docs/en/data-sheet/PCF8563.pdf,
+PC817X1NSZ0F,夏普Sharp,光耦,DIP-4,4,1.2,5.0,-30,100,42000,0.28,6,量产,光电耦合器 晶体管输出 DIP-4 通过UL认证,https://www.sharpsde.com/fileadmin/products/Optoelectronics/PC817.pdf,EL817B
+EL817B,Everlight亿光,光耦,DIP-4,4,1.2,5.0,-55,110,38000,0.22,5,量产,光电耦合器 兼容PC817引脚 DIP-4,https://www.everlight.com/pdf/EL817.pdf,PC817X1NSZ0F
+LTV-817S,光宝Lite-On,光耦,SMD-4,4,1.2,5.0,-30,100,26000,0.26,7,量产,光电耦合器 贴片SMD-4 引脚间距与DIP不同,https://optoelectronics.liteon.com/upload/download/DS-70-96-0004/LTV-8X7%20series.pdf,
+ADS1115IDGSR,TI,数据转换器,VSSOP-10,10,2.0,5.5,-40,125,5600,9.8,20,量产,16位I2C ADC 四通道 可编程增益 VSSOP-10,https://www.ti.com/lit/ds/symlink/ads1115.pdf,
+ADS1015IDGSR,TI,数据转换器,VSSOP-10,10,2.0,5.5,-40,125,8200,6.4,18,量产,12位I2C ADC 四通道 引脚兼容ADS1115,https://www.ti.com/lit/ds/symlink/ads1015.pdf,
+MCP3421A0T-E/CH,Microchip,数据转换器,SOT-23-6,6,2.7,5.5,-40,125,3400,8.2,24,量产,18位单通道I2C ADC 内置基准 SOT-23-6,https://ww1.microchip.com/downloads/en/DeviceDoc/22003e.pdf,
+MAX809SEUR+T,Maxim,电源监控,SOT-23-3,3,1.0,5.5,-40,105,11000,2.6,14,量产,复位监控芯片 阈值2.93V SOT-23-3,https://www.analog.com/media/en/technical-documentation/data-sheets/MAX803-MAX810.pdf,
+TPS3808G33DBVR,TI,电源监控,SOT-23-6,6,1.7,6.5,-40,125,4800,5.4,18,量产,复位监控 可调延时 SOT-23-6 带看门狗,https://www.ti.com/lit/ds/symlink/tps3808.pdf,
+XC61CN3302MR,Torex,电源监控,SOT-23,3,0.7,10.0,-40,85,9800,0.9,10,量产,电压检测器 3.3V阈值 SOT-23 可替代MAX809,https://www.torexsemi.com/file/xc61c/XC61C.pdf,
+ESP8266EX,乐鑫Espressif,微控制器MCU,QFN-32,32,2.5,3.6,-40,125,1500,7.8,30,NRND,Wi-Fi SoC 老型号 建议改用ESP32-C3,https://www.espressif.com/sites/default/files/documentation/0a-esp8266ex_datasheet_en.pdf,

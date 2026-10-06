@@ -1,0 +1,477 @@
+{
+  "csv": "data/samples/chips_seed.csv",
+  "rows": 89,
+  "top": 5,
+  "index_build_ms": 375.0,
+  "part_cases": {
+    "total": 7,
+    "skipped": 0,
+    "hit_top1": 6,
+    "hit_topk": 7,
+    "pin_hit_top1": 6,
+    "pin_total": 8,
+    "top1_ok": 1,
+    "top1_expected_present": 1,
+    "order_ok": 1,
+    "order_total": 1,
+    "violations": 0,
+    "rows": 19
+  },
+  "nl_cases": {
+    "total": 9,
+    "cat_ok": 9,
+    "pkg_ok": 2,
+    "pkg_total": 2,
+    "empty": 0,
+    "pkg_top1": 2,
+    "pkg_rank_sum": 2,
+    "pkg_rank_n": 2
+  },
+  "latencies_ms": [
+    5.45,
+    4.06,
+    3.94,
+    4.08,
+    4.47,
+    4.0,
+    3.86
+  ],
+  "part_detail": [
+    {
+      "query": "STM32F103C8T6",
+      "note": "国内 MCU 替代最典型场景",
+      "verdict": "PASS",
+      "expected_pins": [
+        "APM32F103C8T6",
+        "CH32V203C8T6"
+      ],
+      "got_top": [
+        "APM32F103C8T6",
+        "CH32V203C8T6",
+        "STC8H8K64U-45I-LQFP48",
+        "CH32F103C8T6",
+        "GD32F103C8T6"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 5.45,
+      "top1": "APM32F103C8T6"
+    },
+    {
+      "query": "W25Q64JVSSIQ",
+      "note": "SPI NOR Flash，另颗料描述里写明兼容",
+      "verdict": "PASS",
+      "expected_pins": [
+        "GD25Q64ESIG"
+      ],
+      "got_top": [
+        "GD25Q64ESIG"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 4.06,
+      "top1": "GD25Q64ESIG"
+    },
+    {
+      "query": "CH340G",
+      "note": "USB 转串口，仅外部电容不同（CH340N 是 SOP-8，属改板替代，不计入 pin 命中）",
+      "verdict": "PASS",
+      "expected_pins": [
+        "CH340C"
+      ],
+      "got_top": [
+        "CH340C",
+        "SP3232EEN",
+        "MAX3232ESE+"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 3.94,
+      "top1": "CH340C"
+    },
+    {
+      "query": "SP3232EEN",
+      "note": "RS-232 收发器（SP3485EN/MAX485 是 RS-485，类别相同但封装不同，应被排除）",
+      "verdict": "PASS",
+      "expected_pins": [
+        "MAX3232ESE+"
+      ],
+      "got_top": [
+        "MAX3232ESE+",
+        "CH340C",
+        "CH340G"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 4.08,
+      "top1": "MAX3232ESE+"
+    },
+    {
+      "query": "TLC555CDR",
+      "note": "CMOS 定时器。NE555DR 温度为 0~70℃、仅覆盖原件 -40~85℃ 需求的 82%，按 §3.4.2 的校准判 warn，因此同封装同脚位的 NE555DR 仍应入选",
+      "verdict": "PASS",
+      "expected_pins": [
+        "NE555DR"
+      ],
+      "got_top": [
+        "ICM7555IBAZ",
+        "PCF8563T",
+        "DS1302Z+",
+        "NE555DR"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 4.47,
+      "top1": "ICM7555IBAZ"
+    },
+    {
+      "query": "SP3485EN",
+      "note": "3.3V RS-485。MAX3485ESA 同封装同脚位同电压区间，是唯一真正 Pin-to-Pin 的候选；MAX485ESA+ 是 5V 器件，电压零交集，属「参考替代」而非 pin 替代",
+      "verdict": "PASS",
+      "expected_pins": [
+        "MAX3485ESA"
+      ],
+      "got_top": [
+        "MAX3485ESA",
+        "SN65HVD230DR"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 4.0,
+      "top1": "MAX3485ESA"
+    },
+    {
+      "query": "AMS1117-3.3",
+      "note": "LDO 替代（LM1117 与 LD1117 均在数据中互为兼容）",
+      "verdict": "PASS",
+      "expected_pins": [
+        "LM1117-3.3"
+      ],
+      "got_top": [
+        "LM1117-3.3"
+      ],
+      "hard_failures": [],
+      "elapsed_ms": 3.86,
+      "top1": "LM1117-3.3"
+    }
+  ],
+  "nl_detail": [
+    {
+      "query": "3.3V 低功耗 LDO SOT-23-5",
+      "verdict": "PASS",
+      "want_category": "线性稳压器LDO",
+      "got_category": "线性稳压器LDO",
+      "want_pkg": "SOT235",
+      "got_pkg": "SOT-23-5",
+      "top1": "SPX3819M5-L-3-3"
+    },
+    {
+      "query": "RS485 收发器 SOIC-8",
+      "verdict": "PASS",
+      "want_category": "接口芯片",
+      "got_category": "接口芯片",
+      "want_pkg": "SOIC8",
+      "got_pkg": "SOIC-8",
+      "top1": "SP3485EN"
+    },
+    {
+      "query": "RS232 电平转换",
+      "verdict": "PASS",
+      "want_category": "接口芯片",
+      "got_category": "接口芯片",
+      "want_pkg": null,
+      "got_pkg": "SOIC-16",
+      "top1": "SP3232EEN"
+    },
+    {
+      "query": "24V 转 5V DC-DC",
+      "verdict": "PASS",
+      "want_category": "DC-DC变换器",
+      "got_category": "DC-DC变换器",
+      "want_pkg": null,
+      "got_pkg": "TO-263-5",
+      "top1": "LM2596S-5.0"
+    },
+    {
+      "query": "16位 ADC 四通道",
+      "verdict": "PASS",
+      "want_category": "数据转换器",
+      "got_category": "数据转换器",
+      "want_pkg": null,
+      "got_pkg": "VSSOP-10",
+      "top1": "ADS1115IDGSR"
+    },
+    {
+      "query": "EEPROM I2C 32Kbit",
+      "verdict": "PASS",
+      "want_category": "存储器",
+      "got_category": "存储器",
+      "want_pkg": null,
+      "got_pkg": "SOIC-8",
+      "top1": "AT24C32D-SSHM-T"
+    },
+    {
+      "query": "运放 SOIC-8",
+      "verdict": "PASS",
+      "want_category": "运算放大器",
+      "got_category": "运算放大器",
+      "want_pkg": null,
+      "got_pkg": "SOIC-8",
+      "top1": "MCP6002T-I/SN"
+    },
+    {
+      "query": "光耦 隔离 DIP-4",
+      "verdict": "PASS",
+      "want_category": "光耦",
+      "got_category": "光耦",
+      "want_pkg": null,
+      "got_pkg": "DIP-4",
+      "top1": "EL817B"
+    },
+    {
+      "query": "MOSFET N沟道 SOT-23",
+      "verdict": "PASS",
+      "want_category": "MOSFET",
+      "got_category": "MOSFET",
+      "want_pkg": null,
+      "got_pkg": "SOT-23",
+      "top1": "2N7002K"
+    }
+  ],
+  "ablation": {
+    "full": {
+      "stats": [
+        {
+          "total": 7,
+          "skipped": 0,
+          "hit_top1": 6,
+          "hit_topk": 7,
+          "pin_hit_top1": 6,
+          "pin_total": 8,
+          "top1_ok": 1,
+          "top1_expected_present": 1,
+          "order_ok": 1,
+          "order_total": 1,
+          "violations": 0,
+          "rows": 19
+        },
+        {
+          "total": 9,
+          "cat_ok": 9,
+          "pkg_ok": 2,
+          "pkg_total": 2,
+          "empty": 0,
+          "pkg_top1": 2,
+          "pkg_rank_sum": 2,
+          "pkg_rank_n": 2
+        }
+      ],
+      "top1": [
+        "APM32F103C8T6",
+        "GD25Q64ESIG",
+        "CH340C",
+        "MAX3232ESE+",
+        "ICM7555IBAZ",
+        "MAX3485ESA",
+        "LM1117-3.3"
+      ],
+      "nl_top1": [
+        "SPX3819M5-L-3-3",
+        "SP3485EN",
+        "SP3232EEN",
+        "LM2596S-5.0",
+        "ADS1115IDGSR",
+        "AT24C32D-SSHM-T",
+        "MCP6002T-I/SN",
+        "EL817B",
+        "2N7002K"
+      ]
+    },
+    "no-supply": {
+      "stats": [
+        {
+          "total": 7,
+          "skipped": 0,
+          "hit_top1": 6,
+          "hit_topk": 7,
+          "pin_hit_top1": 6,
+          "pin_total": 8,
+          "top1_ok": 1,
+          "top1_expected_present": 1,
+          "order_ok": 1,
+          "order_total": 1,
+          "violations": 0,
+          "rows": 19
+        },
+        {
+          "total": 9,
+          "cat_ok": 9,
+          "pkg_ok": 2,
+          "pkg_total": 2,
+          "empty": 0,
+          "pkg_top1": 2,
+          "pkg_rank_sum": 2,
+          "pkg_rank_n": 2
+        }
+      ],
+      "top1": [
+        "APM32F103C8T6",
+        "GD25Q64ESIG",
+        "CH340C",
+        "MAX3232ESE+",
+        "ICM7555IBAZ",
+        "MAX3485ESA",
+        "LM1117-3.3"
+      ],
+      "nl_top1": [
+        "SPX3819M5-L-3-3",
+        "MAX485ESA+",
+        "SP3232EEN",
+        "LM2596S-5.0",
+        "ADS1115IDGSR",
+        "AT24C32D-SSHM-T",
+        "OPA2333AIDR",
+        "EL817B",
+        "2N7002K"
+      ]
+    },
+    "no-rules": {
+      "stats": [
+        {
+          "total": 7,
+          "skipped": 0,
+          "hit_top1": 5,
+          "hit_topk": 7,
+          "pin_hit_top1": 5,
+          "pin_total": 8,
+          "top1_ok": 0,
+          "top1_expected_present": 1,
+          "order_ok": 1,
+          "order_total": 1,
+          "violations": 0,
+          "rows": 19
+        },
+        {
+          "total": 9,
+          "cat_ok": 9,
+          "pkg_ok": 2,
+          "pkg_total": 2,
+          "empty": 0,
+          "pkg_top1": 2,
+          "pkg_rank_sum": 2,
+          "pkg_rank_n": 2
+        }
+      ],
+      "top1": [
+        "CH32F103C8T6",
+        "GD25Q64ESIG",
+        "CH340C",
+        "MAX3232ESE+",
+        "ICM7555IBAZ",
+        "MAX3485ESA",
+        "LM1117-3.3"
+      ],
+      "nl_top1": [
+        "SPX3819M5-L-3-3",
+        "SP3485EN",
+        "SP3232EEN",
+        "LM2596S-5.0",
+        "ADS1115IDGSR",
+        "AT24C32D-SSHM-T",
+        "MCP6002T-I/SN",
+        "EL817B",
+        "2N7002K"
+      ]
+    },
+    "no-category": {
+      "stats": [
+        {
+          "total": 7,
+          "skipped": 0,
+          "hit_top1": 6,
+          "hit_topk": 7,
+          "pin_hit_top1": 6,
+          "pin_total": 8,
+          "top1_ok": 1,
+          "top1_expected_present": 1,
+          "order_ok": 1,
+          "order_total": 1,
+          "violations": 0,
+          "rows": 19
+        },
+        {
+          "total": 9,
+          "cat_ok": 9,
+          "pkg_ok": 2,
+          "pkg_total": 2,
+          "empty": 0,
+          "pkg_top1": 2,
+          "pkg_rank_sum": 2,
+          "pkg_rank_n": 2
+        }
+      ],
+      "top1": [
+        "APM32F103C8T6",
+        "GD25Q64ESIG",
+        "CH340C",
+        "MAX3232ESE+",
+        "ICM7555IBAZ",
+        "MAX3485ESA",
+        "LM1117-3.3"
+      ],
+      "nl_top1": [
+        "SPX3819M5-L-3-3",
+        "SP3485EN",
+        "SP3232EEN",
+        "LM2596S-5.0",
+        "ADS1115IDGSR",
+        "AT24C32D-SSHM-T",
+        "MCP6002T-I/SN",
+        "EL817B",
+        "2N7002K"
+      ]
+    },
+    "no-rerank": {
+      "stats": [
+        {
+          "total": 7,
+          "skipped": 0,
+          "hit_top1": 6,
+          "hit_topk": 7,
+          "pin_hit_top1": 6,
+          "pin_total": 8,
+          "top1_ok": 1,
+          "top1_expected_present": 1,
+          "order_ok": 1,
+          "order_total": 1,
+          "violations": 0,
+          "rows": 19
+        },
+        {
+          "total": 9,
+          "cat_ok": 9,
+          "pkg_ok": 1,
+          "pkg_total": 2,
+          "empty": 0,
+          "pkg_top1": 1,
+          "pkg_rank_sum": 5,
+          "pkg_rank_n": 2
+        }
+      ],
+      "top1": [
+        "APM32F103C8T6",
+        "GD25Q64ESIG",
+        "CH340C",
+        "MAX3232ESE+",
+        "ICM7555IBAZ",
+        "MAX3485ESA",
+        "LM1117-3.3"
+      ],
+      "nl_top1": [
+        "AMS1117-3.3",
+        "MAX485ESA+",
+        "MAX485ESA+",
+        "LM2596S-5.0",
+        "ADS1115IDGSR",
+        "AT24C32D-SSHM-T",
+        "LM358N",
+        "EL817B",
+        "2N7002K"
+      ]
+    }
+  }
+}

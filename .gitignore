@@ -1,0 +1,42 @@
+# ---- 芯选 XinXuan : 版本控制排除清单 ----
+# 原则：仓库只放「代码 / 文档 / 手写种子数据」。
+#       一切可由脚本重新生成、或体积过大的文件都不进仓库。
+
+# ===== 依赖与解释器 =====
+# 本机 pip 被沙箱拒绝，依赖是用 scripts/fetch_deps.py 解包到 .deps/ 的。
+# 它体积大且可一条命令重建，因此不提交。
+.deps/
+.deps-build/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ===== 运行期产物 =====
+*.log
+jieba.cache
+tmp*
+.tmp/
+build/
+dist/
+
+# ===== 数据集：可重新下载/生成的大文件 =====
+# 生成命令：
+#   python scripts/fetch_dataset.py            # 下载 jlcparts 快照（约 5 MB）
+#   python scripts/build_dataset.py --categories semi
+# 提交进仓库的只有手写种子集与一个格式样本，见下方白名单。
+data/chips_real.csv
+data/chips_real_semi.csv
+data/chips_real_300.csv
+data/chips.csv
+data/samples/jlcparts-sample-subcat1.csv
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini

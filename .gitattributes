@@ -1,0 +1,37 @@
+# ---- 芯选 XinXuan : 行尾与编码策略 ----
+# 目的：让仓库在任何机器上 clone 出来的字节都一致，不受本机 core.autocrlf 影响。
+#
+# 背景（本机实测）：
+#   - run.ps1 / scripts/check.ps1 是「纯 ASCII + LF」，刻意不含中文（规避 Windows
+#     PowerShell 5.1 按 ANSI 解析 .ps1 的陷阱）。
+#   - scripts/setup_env.ps1 含中文，因此是「UTF-8 BOM + CRLF」。
+#   - 若不做固定，Windows 上 git 默认 core.autocrlf=true 会把还原出来的行尾改掉，
+#     给 .ps1 带来不必要的解析差异。
+
+# 默认：按内容自动判定文本
+* text=auto
+
+# 源码与文档统一 LF（已在 Linux/Windows 实测均可正常运行）
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.json  text eol=lf
+*.csv   text eol=lf
+
+# PowerShell 脚本在 Windows 上使用，固定 CRLF；BOM 由内容原样保留
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# 二进制资产：禁止任何转换
+*.pdf   binary
+*.tar   binary
+*.gz    binary
+*.png   binary
+*.jpg   binary
+*.xlsx  binary
+*.docx  binary
+*.pptx  binary
+
+# 语言统计：让主文档与说明文档计入仓库语言构成
+*.md    linguist-documentation
