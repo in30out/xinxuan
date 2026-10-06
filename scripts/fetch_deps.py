@@ -28,6 +28,16 @@ PACKAGES = [
     "Flask", "Werkzeug", "Jinja2", "MarkupSafe", "itsdangerous",
     "click", "blinker", "colorama", "flask-cors", "jieba",
 ]
+# 只有「要打包成 .exe」或「要开原生窗口」时才需要的包（体积大，按需装）：
+#   pywebview  -> 原生窗口（Windows 下经 pythonnet 调 WebView2）
+#   pythonnet / clr_loader -> pywebview 在 Windows 上的 .NET 桥
+#   PyInstaller / altgraph / pyinstaller-hooks-contrib -> 打包器
+#   bottle / proxy_tools   -> pywebview 的 http 与线程代理依赖
+EXE_PACKAGES = [
+    "pywebview", "pythonnet", "clr_loader", "bottle", "proxy_tools",
+    "PyInstaller", "pyinstaller-hooks-contrib", "altgraph",
+    "packaging", "setuptools", "typing_extensions",
+]
 
 
 def pick_artifact(urls: list):
@@ -75,9 +85,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", default=os.path.join(ROOT, ".deps"))
     ap.add_argument("--only", default="", help="只安装指定包，逗号分隔")
+    ap.add_argument("--exe", action="store_true",
+                    help="额外安装打包/原生窗口所需依赖（pywebview + PyInstaller 等）")
     args = ap.parse_args()
     os.makedirs(args.target, exist_ok=True)
     wanted = [p.strip() for p in args.only.split(",") if p.strip()] or PACKAGES
+    if args.exe:
+        wanted = wanted + [p for p in EXE_PACKAGES if p not in wanted]
     for pkg in wanted:
         try:
             print(install_package(pkg, args.target), flush=True)

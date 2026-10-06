@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>芯选 · 数据统计</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="page-stats">
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">芯选</span>
+    <span class="brand-sub">数据统计 · v{{ version }}</span></div>
+  <nav class="topnav"><a href="/">← 返回选型页</a></nav>
+</header>
+<main class="wrap">
+  <section class="panel">
+    <h2>数据集概览</h2>
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-num">{{ s.total }}</span><span class="kpi-label">器件总数</span></div>
+      <div class="kpi"><span class="kpi-num">{{ s.manufacturers|length }}</span><span class="kpi-label">厂商数</span></div>
+      <div class="kpi"><span class="kpi-num">{{ s.categories|length }}</span><span class="kpi-label">品类数</span></div>
+      <div class="kpi kpi-warn"><span class="kpi-num">{{ s.alerts|length }}</span><span class="kpi-label">供货告警</span></div>
+    </div>
+  </section>
+  <section class="panel">
+    <h2>品类分布</h2>
+    <table class="grid"><thead><tr><th>品类</th><th>数量</th></tr></thead><tbody>
+    {% for name, count in s.categories.items() %}
+      <tr><td>{{ name }}</td><td class="num">{{ count }}</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </section>
+  <section class="panel">
+    <h2>厂商分布</h2>
+    <table class="grid"><thead><tr><th>厂商</th><th>数量</th></tr></thead><tbody>
+    {% for name, count in s.manufacturers.items() %}
+      <tr><td>{{ name }}</td><td class="num">{{ count }}</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </section>
+  <section class="panel">
+    <h2>库存 / 停产告警（{{ s.alerts|length }}）</h2>
+    <table class="grid"><thead><tr><th>型号</th><th>厂商</th><th>库存</th><th>交期</th><th>状态</th></tr></thead><tbody>
+    {% for a in s.alerts %}
+      <tr><td class="mono">{{ a.part_no }}</td><td>{{ a.manufacturer }}</td>
+        <td class="num">{{ a.stock }}</td><td class="num">{{ a.lead_time_days }} 天</td>
+        <td>{{ a.lifecycle }}</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </section>
+  <p class="foot-note">可视化统计请见 <a href="/">选型页 · 数据总览</a>（由 /api/stats 驱动）。</p>
+</main>
+</body>
+</html>

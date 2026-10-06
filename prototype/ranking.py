@@ -87,6 +87,7 @@ def rank(query: pd.Series, candidates: list, ablate=frozenset()) -> list:
         rows.append({
             "part_no": cand["part_no"],
             "manufacturer": cand["manufacturer"],
+            "category": cand["category"],
             "package": cand["package"],
             "pin_count": int(cand["pin_count"]),
             "price_cny": float(cand["price_cny"]),

@@ -123,27 +123,52 @@ def test_no_rules_ablation_actually_changes_ranking(df, index):
 # --- 缺陷 3：元组索引取反导致 NL 排序回归 ---------------------------------
 
 def test_nl_rerank_is_actually_applied(df, index):
-    """`sim = item[0]` 那条回归：NL 模式必须用重排后的相似度，不能取回原始余弦。"""
-    res = recommend(df, index, "3.3V 低功耗 LDO SOT-23-5", top_n=3)
-    top = res["results"][0]
-    assert top["part_no"] == "SPX3819M5-L-3-3"
-    assert top["similarity"] > 0.6, f"重排后的相似度应远高于原始余弦，实际 {top['similarity']}"
+    """NL 重排必须真的生效：Top-1 要落在**精确封装**上，且重排分明显高于原始余弦。
 
-    no_rerank = recommend(df, index, "3.3V 低功耗 LDO SOT-23-5", top_n=3, ablate=("rerank",))
-    assert no_rerank["results"][0]["part_no"] != "SPX3819M5-L-3-3"
+    注意（2026-10 更新）：修掉 tokenizer 返回字符串的缺陷后，本用例的 Top-1 从
+    SPX3819M5-L-3-3 变成 RT9013-33GB。这不是回归 —— 三个 SOT-23-5 的 3.3V LDO
+    （RT9013-33GB / ME6211C33M5G / SPX3819M5-L-3-3）重排分分别是 0.6564 / 0.6419 /
+    0.6367，差距来自真实的词面命中，且三者都是正确答案；旧的第一名是"字符级
+    unigram 噪声"造成的巧合。所以这里断言**机制**（精确封装 + 分数抬升 + 消融后
+    名次改变），不断言具体是哪一颗，避免把巧合写死成契约。
+    """
+    query = "3.3V 低功耗 LDO SOT-23-5"
+    res = recommend(df, index, query, top_n=3)
+    top = res["results"][0]
+    assert top["part_no"] in {"RT9013-33GB", "ME6211C33M5G", "SPX3819M5-L-3-3"}, \
+        f"Top-1 应是 SOT-23-5 的 3.3V LDO，实际 {top['part_no']}"
+    assert top["package"] == "SOT-23-5", f"Top-1 必须是精确封装，实际 {top['package']}"
+    assert top["similarity"] > 0.5, f"重排后的相似度应明显高于原始余弦，实际 {top['similarity']}"
+
+    # 关掉重排后，排序必须变化（否则说明重排没接线）；且第一名应不再是"精确封装的那颗"
+    no_rerank = recommend(df, index, query, top_n=3, ablate=("rerank",))
+    assert no_rerank["results"][0]["part_no"] != top["part_no"]
+    assert no_rerank["results"][0]["package"] != "SOT-23-5", \
+        "关掉封装重排后，原始余弦会把非 SOT-23-5 的候选排到第一"
 
 
 def test_rs485_top1_is_soic8_pair(df, index):
-    """`RS485 收发器 SOIC-8` 的 Top-1 必须是 SP3485EN（3.3V/SOIC-8）。
+    """`RS485 收发器 SOIC-8` 的 Top-1 必须是 RS-485 的 SOIC-8 器件。
 
-    5V 的 MAX485ESA+ **允许出现在后续位次**（NL 模式没有"原件"基准，无法断言电压不兼容，
-    风险模块会保守地把它标成 🟡中风险/参考替代），但绝不能挤掉同协议的 3.3V 器件。
+    注意（2026-10 更新）：修掉 tokenizer 缺陷后 Top-1 从 SP3485EN 变成 MAX485ESA+
+    （原始余弦 0.3810 vs 0.3603，改前是靠字符级 unigram 里的 RS-485 字面量把它抬上去的）。
+    两者都是 RS-485/SOIC-8，差别只在 MAX485 是 5V、SP3485 是 3.3V，而**查询本身没有
+    指定电压**，因此系统没有依据断言谁更优 —— 这里改为断言硬事实：Top-1 必须是
+    RS-485 收发器（非 RS-232/CAN/UART），且必须落在精确封装 SOIC-8 上；
+    同时断言 3.3V 的 SP3485EN 仍在 Top-3 里，不能被踢出。
     """
     res = recommend(df, index, "RS485 收发器 SOIC-8", top_n=3)
-    assert res["results"][0]["part_no"] == "SP3485EN"
+    top1 = res["results"][0]
+    assert top1["part_no"] in {"MAX485ESA+", "MAX3485ESA", "SP3485EN"}, \
+        f"Top-1 应是 RS-485 收发器，实际 {top1['part_no']}"
+    assert top1["package"] == "SOIC-8", f"Top-1 必须是精确封装，实际 {top1['package']}"
+    names = [r["part_no"] for r in res["results"]]
+    assert "SP3485EN" in names, f"3.3V 的 SP3485EN 不能掉出 Top-3，实际 {names}"
+    # RS-232 器件（SP3232EEN/MAX3232ESE+）封装虽同为 SOIC，但协议不符，必须被降权到后面
+    assert names.index("SP3232EEN") > 0 if "SP3232EEN" in names else True
     # NL 模式没有"原件"基准，risk._soft_result 刻意保守判 🟡（见 eval-report.md §3 与文档 §3.4.5）。
     # 这里把这条设计决定固定下来：以后谁把它改成"NL 也判 🟢"，必须先解释为什么。
-    assert res["results"][0]["risk_level"] == "🟡中风险"
+    assert top1["risk_level"] == "🟡中风险"
     assert all(r["risk_level"] != "🔴高风险" for r in res["results"])
 
 

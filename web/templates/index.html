@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>芯选 · 芯片替代选型智能推荐</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">芯</div>
+      <div class="brand-text">
+        <h1 class="brand-title">芯选 <span class="brand-sub">XinXuan</span></h1>
+        <p class="brand-tagline">芯片替代选型智能推荐 · 可解释的国产替代决策支持</p>
+      </div>
+    </div>
+
+    <div class="header-side">
+      <div class="dataset-badge" id="dataset-badge" title="数据规模来自 GET /api/stats">
+        <span class="db-dot" aria-hidden="true"></span>
+        <span class="db-label">演示数据集</span>
+        <span class="db-nums" id="badge-nums">89 条 · 36 厂商 · 12 品类</span>
+      </div>
+      <div class="version-chip" id="version-chip" title="GET /api/health">v—</div>
+    </div>
+  </div>
+
+  <nav class="tabnav" id="tabnav" role="tablist" aria-label="主导航">
+    <button class="tab-btn is-active" id="tab-search" data-tab="search" role="tab" aria-selected="true" aria-controls="panel-search">选型检索</button>
+    <button class="tab-btn" id="tab-stats" data-tab="stats" role="tab" aria-selected="false" aria-controls="panel-stats">数据总览</button>
+    <button class="tab-btn" id="tab-model" data-tab="model" role="tab" aria-selected="false" aria-controls="panel-model">模型与算法</button>
+    <button class="tab-btn" id="tab-about" data-tab="about" role="tab" aria-selected="false" aria-controls="panel-about">关于与声明</button>
+    <div class="tabnav-fill"></div>
+    <div class="tabnav-note" id="tabnav-note">单次查询 4–7 ms · 规则可追溯</div>
+  </nav>
+</header>
+
+<main class="container">
+
+  <!-- ============================ 1. 选型检索 ============================ -->
+  <section id="panel-search" class="tab-panel is-active" role="tabpanel" aria-labelledby="tab-search">
+
+    <form class="searchbar" id="search-form" autocomplete="off">
+      <div class="search-field">
+        <span class="search-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.2-4.2"></path></svg>
+        </span>
+        <input type="text" id="q" name="part" placeholder="输入芯片型号（如 STM32F103C8T6），或一句中文需求（如 3.3V 低功耗 LDO SOT-23-5）" aria-label="查询芯片型号或需求描述" spellcheck="false">
+        <button type="button" class="search-clear" id="search-clear" aria-label="清空" hidden>×</button>
+        <ul class="suggest" id="suggest-list" role="listbox" hidden></ul>
+      </div>
+
+      <label class="topn">
+        <span class="topn-label">Top-N</span>
+        <select id="top-n" aria-label="返回候选数量">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+        </select>
+      </label>
+
+      <button type="submit" class="btn btn-primary" id="search-btn">
+        <span class="btn-text">推荐替代料</span>
+      </button>
+    </form>
+
+    <div class="examples" id="examples">
+      <span class="examples-label">示例查询</span>
+      <button type="button" class="chip chip-example" data-q="STM32F103C8T6">STM32F103C8T6</button>
+      <button type="button" class="chip chip-example" data-q="3.3V 低功耗 LDO SOT-23-5">3.3V 低功耗 LDO SOT-23-5</button>
+      <button type="button" class="chip chip-example" data-q="RS485 收发器 SOIC-8">RS485 收发器 SOIC-8</button>
+      <button type="button" class="chip chip-example" data-q="24V 转 5V DC-DC">24V 转 5V DC-DC</button>
+      <span class="examples-hint">按 <kbd>/</kbd> 聚焦搜索框</span>
+    </div>
+
+    <!-- 查询概要 -->
+    <div class="query-status" id="query-status" hidden>
+      <div class="qs-item qs-mode"><span class="qs-k">命中模式</span><span class="qs-v" id="status-mode">—</span></div>
+      <div class="qs-item"><span class="qs-k">识别品类</span><span class="qs-v" id="status-category">—</span></div>
+      <div class="qs-item"><span class="qs-k">命中原型号</span><span class="qs-v mono" id="status-matched">—</span></div>
+      <div class="qs-item"><span class="qs-k">耗时</span><span class="qs-v mono" id="status-elapsed">—</span></div>
+      <div class="qs-item"><span class="qs-k">品类硬过滤</span><span class="qs-v mono" id="status-filtered">—</span></div>
+      <div class="qs-spacer"></div>
+      <div class="qs-item qs-count"><span class="qs-v mono" id="result-count">0</span><span class="qs-k">条推荐</span></div>
+      <div class="qs-note" id="status-note" hidden></div>
+    </div>
+
+    <!-- 加载态（骨架屏） -->
+    <div class="loading" id="loading-state" hidden>
+      <div class="loading-head"><span class="spinner" aria-hidden="true"></span><span>正在召回候选、比对六维规则并做供应链加权排序…</span></div>
+      <div class="skeleton-card"><div class="sk sk-1"></div><div class="sk sk-2"></div><div class="sk sk-3"></div></div>
+      <div class="skeleton-card"><div class="sk sk-1"></div><div class="sk sk-2"></div><div class="sk sk-3"></div></div>
+    </div>
+
+    <!-- 错误态 -->
+    <div class="alert alert-error" id="error-state" hidden>
+      <strong>接口请求失败。</strong><span id="error-msg"></span>
+    </div>
+
+    <!-- 空结果 -->
+    <div class="empty-state" id="empty-state" hidden>
+      <div class="empty-icon" aria-hidden="true">∅</div>
+      <h3 class="empty-title" id="empty-title">未匹配到候选</h3>
+      <p class="empty-hint" id="empty-hint"></p>
+      <div class="empty-actions">
+        <button type="button" class="chip chip-example" data-q="STM32F103C8T6">STM32F103C8T6</button>
+        <button type="button" class="chip chip-example" data-q="3.3V 低功耗 LDO SOT-23-5">3.3V 低功耗 LDO SOT-23-5</button>
+        <button type="button" class="chip chip-example" data-q="RS485 收发器 SOIC-8">RS485 收发器 SOIC-8</button>
+      </div>
+    </div>
+
+    <!-- 结果区 -->
+    <div class="results-block" id="results-block" hidden>
+      <div class="viewbar">
+        <div class="viewbar-left">
+          <h2 class="viewbar-title">替代料清单</h2>
+          <span class="viewbar-sub" id="result-sub">按综合得分降序</span>
+        </div>
+        <div class="seg" id="view-switch" role="group" aria-label="视图切换">
+          <button type="button" class="seg-btn is-active" data-view="cards" aria-pressed="true">卡片视图</button>
+          <button type="button" class="seg-btn" data-view="table" aria-pressed="false">对比表格</button>
+        </div>
+      </div>
+
+      <div class="cards" id="cards-view"></div>
+
+      <div class="table-wrap" id="table-view" hidden>
+        <table class="ctable" id="compare-table">
+          <thead id="compare-thead"></thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+        <p class="table-tip">点击表头排序；点击任意行展开六维规则与供应链明细。</p>
+      </div>
+
+    </div>
+
+    <!-- 被规则排除（可解释性卖点） -->
+    <details class="rejected" id="rejected-block" hidden>
+      <summary class="rejected-summary">
+        <span class="rejected-icon" aria-hidden="true">⚠</span>
+        <span class="rejected-title">被规则排除的候选</span>
+        <span class="rejected-count" id="rejected-count">0</span>
+        <span class="rejected-note">命中零容忍硬约束（类别不符 / 封装不同 / 脚位差&gt;2 / 电压零交集 / 功能冲突 / 停产无货）⇒ 一律列入「不推荐」，此处逐条给出否决理由，不做静默丢弃。</span>
+      </summary>
+      <div class="rejected-body" id="rejected-list"></div>
+    </details>
+  </section>
+
+  <!-- ============================ 2. 数据总览 ============================ -->
+  <section id="panel-stats" class="tab-panel" role="tabpanel" aria-labelledby="tab-stats" hidden>
+    <div class="skeleton-card sk-grid" id="stats-skeleton">
+      <span class="sk" style="width:74%"></span>
+      <span class="sk" style="width:48%"></span>
+      <span class="sk" style="width:62%"></span>
+    </div>
+    <div class="stat-cards" id="stat-cards"></div>
+
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title">品类分布</h3>
+          <span class="panel-sub">按器件条目数降序 · 纯 CSS 条形图</span>
+        </div>
+        <div class="hbars" id="chart-category"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title">生命周期分布</h3>
+          <span class="panel-sub">数据字段为人工整理的演示字段</span>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut" id="chart-lifecycle" role="img" aria-label="生命周期分布环形图"></div>
+          <ul class="legend" id="chart-lifecycle-legend"></ul>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">库存与停产告警 <span class="badge badge-warn" id="alerts-count">0</span></h3>
+        <span class="panel-sub">触发条件：库存 &lt; 1000 片，或生命周期为 EOL / NRND</span>
+      </div>
+      <div class="table-wrap">
+        <table class="dtable">
+          <thead>
+            <tr><th>型号</th><th>厂商</th><th>品类</th><th class="num">库存</th><th>生命周期</th><th>告警原因</th></tr>
+          </thead>
+          <tbody id="alerts-body"></tbody>
+        </table>
+      </div>
+      <div class="empty-state empty-inline" id="stats-empty" hidden>
+        <p class="empty-hint">统计数据未加载。请检查 <code>/api/stats</code> 是否可用。</p>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============================ 3. 模型与算法 ============================ -->
+  <section id="panel-model" class="tab-panel" role="tabpanel" aria-labelledby="tab-model" hidden>
+
+    <section class="panel panel-lead">
+      <div class="panel-head">
+        <h3 class="panel-title">三段链路：召回 → 规则 → 排序 → 定级</h3>
+        <span class="panel-sub">全链路无外部模型依赖，任意一条结论都可回溯到具体规则</span>
+      </div>
+      <ol class="pipeline">
+        <li class="pipe-step">
+          <span class="pipe-idx">①</span>
+          <h4>候选召回</h4>
+          <p>对 <code>型号+品类+厂商+封装+描述</code> 拼成的文本建 TF-IDF 词向量（jieba 搜索模式分词，无 jieba 时降级为字符 2-gram），用余弦相似度取 <code>top_k = max(4·N, 20)</code> 作为候选池。</p>
+        </li>
+        <li class="pipe-step">
+          <span class="pipe-idx">②</span>
+          <h4>兼容规则过滤</h4>
+          <p>六维规则逐条判定（类别 / 封装 / 引脚 / 电压 / 功能 / 温度），每条产出 <span class="pill pill-pass">pass</span> <span class="pill pill-warn">warn</span> <span class="pill pill-fail">fail</span> 与中文数值依据；命中<strong>零容忍</strong>的候选直接落「不推荐」，移出主榜单但保留在排除清单里。</p>
+        </li>
+        <li class="pipe-step">
+          <span class="pipe-idx">③</span>
+          <h4>供应链加权排序</h4>
+          <p>参数分 <code>param</code> 与供应链因子 <code>supply</code> 合成综合得分，供应链最多影响 ±35%，避免「便宜但装不上」的料冲上榜首。</p>
+        </li>
+        <li class="pipe-step">
+          <span class="pipe-idx">④</span>
+          <h4>风险分级与替代等级</h4>
+          <p>按停产 / 缺货 / 电压不兼容 / 功能冲突等触发条件判定 <span class="risk risk-low">🟢低</span> <span class="risk risk-mid">🟡中</span> <span class="risk risk-high">🔴高</span>，并给出四档替代等级与一句话结论。</p>
+        </li>
+      </ol>
+    </section>
+
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-head"><h3 class="panel-title">核心公式</h3><span class="panel-sub">与 <code>ranking.py</code> 逐行一致</span></div>
+
+        <div class="formula-block">
+          <div class="formula-tag">参数分 <span class="formula-tag-en">param</span></div>
+          <div class="formula">
+            <span class="f-var">param</span> <span class="f-op">=</span> 0.70 <span class="f-op">·</span> <span class="f-var">rule_score</span> <span class="f-op">+</span> 0.30 <span class="f-op">·</span> <span class="f-var">similarity</span>
+            <span class="formula-when">型号替换模式</span>
+          </div>
+          <div class="formula">
+            <span class="f-var">param</span> <span class="f-op">=</span> <span class="f-var">similarity</span>
+            <span class="formula-when">自然语言需求模式（无原件参数可比）</span>
+          </div>
+        </div>
+
+        <div class="formula-block">
+          <div class="formula-tag">供应链因子 <span class="formula-tag-en">supply</span></div>
+          <div class="formula">
+            <span class="f-var">supply</span> <span class="f-op">=</span>
+            <span class="f-var">w<sub>stock</sub></span><sup>0.45</sup> <span class="f-op">·</span>
+            <span class="f-var">w<sub>price</sub></span><sup>0.20</sup> <span class="f-op">·</span>
+            <span class="f-var">w<sub>lead</sub></span><sup>0.20</sup> <span class="f-op">·</span>
+            <span class="f-var">w<sub>life</sub></span><sup>0.15</sup>
+          </div>
+          <div class="formula-note">缺货（<code>stock ≤ 0</code>）时再乘 0.2 并直接标红；幂次即权重，权重之和为 1。</div>
+        </div>
+
+        <div class="formula-block">
+          <div class="formula-tag">综合得分 <span class="formula-tag-en">score</span></div>
+          <div class="formula">
+            <span class="f-var">score</span> <span class="f-op">=</span> <span class="f-var">param</span> <span class="f-op">·</span> ( 0.65 <span class="f-op">+</span> 0.35 <span class="f-op">·</span> <span class="f-var">supply</span> )
+          </div>
+          <div class="formula-note">供应链影响力上限 ±35%：<code>supply=1</code> 不倒扣，<code>supply=0</code> 最多打 6.5 折 —— 供货好不会让不合格的料上位，供货差也不至于一票否决。</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3 class="panel-title">六维规则权重</h3><span class="panel-sub">权重之和 = 1.00</span></div>
+        <table class="dtable dtable-tight">
+          <thead><tr><th>规则</th><th class="num">权重</th><th>判定口径</th></tr></thead>
+          <tbody>
+            <tr><td>类别一致</td><td class="num mono">0.20</td><td>器件品类是否完全相同 <span class="tag tag-critical">零容忍</span></td></tr>
+            <tr><td>封装一致</td><td class="num mono">0.15</td><td>封装字符串是否完全相同 <span class="tag tag-critical">零容忍</span></td></tr>
+            <tr><td>引脚一致</td><td class="num mono">0.10</td><td>脚数差值，0 为 pass，±1~2 为 warn，&gt;2 为 fail <span class="tag tag-critical">零容忍</span></td></tr>
+            <tr><td>电压兼容</td><td class="num mono">0.20</td><td>候选供电范围是否覆盖原件区间；无交集即 fail <span class="tag tag-critical">零容忍</span></td></tr>
+            <tr><td>功能一致</td><td class="num mono">0.20</td><td>从描述抽取功能参数指纹（电压/位宽/通道/容量/沟道/Flash/RAM）后等值比对 <span class="tag tag-critical">零容忍</span></td></tr>
+            <tr><td>温度覆盖</td><td class="num mono">0.15</td><td>候选温度区间覆盖原件；不足 80% 记 fail，但<strong>不算零容忍</strong></td></tr>
+          </tbody>
+        </table>
+        <div class="formula-note formula-note-block">
+          单项得分：<span class="pill pill-pass">pass</span> = 1.0，<span class="pill pill-warn">warn</span> = 0.5，<span class="pill pill-fail">fail</span> = 0.0；
+          <code>rule_score = Σ 权重 × 单项得分</code>。
+        </div>
+      </section>
+    </div>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">硬约束零容忍（设计决定）</div>
+      <p><strong>类别不符 / 封装串不同 / 脚位差 &gt; 2 / 电压零交集 / 功能参数冲突 → 一律「不推荐」</strong>，不进主榜单，只在「被规则排除的候选」里给出否决理由。</p>
+      <p class="callout-why"><strong>温度覆盖不足不算零容忍</strong>：温度等级不够是「降额使用 / 需评估环境」，属于工程可评估项，因此按 🟡 中风险 + 规则降权处理，而不是直接判死。这条边界是刻意的 —— 把「装不上」和「用起来要留心」分开。</p>
+    </div>
+
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-head"><h3 class="panel-title">供应链四因子口径</h3><span class="panel-sub">全部归一化到 0–1</span></div>
+        <table class="dtable dtable-tight">
+          <thead><tr><th>因子</th><th class="num">权重</th><th>计算式</th></tr></thead>
+          <tbody>
+            <tr><td>库存 <span class="mono">w_stock</span></td><td class="num mono">0.45</td><td><code>clamp( log1p(stock) / log1p(10⁶), 0, 1 )</code>，100 万片视为满分</td></tr>
+            <tr><td>价格 <span class="mono">w_price</span></td><td class="num mono">0.20</td><td><code>clamp( 1 − (ratio − 1) × 0.15, 0.6, 1 )</code>，比原型号贵 10% 约扣 1.5%</td></tr>
+            <tr><td>交期 <span class="mono">w_lead</span></td><td class="num mono">0.20</td><td><code>clamp( 1 − (lead − 7) / 60, 0.4, 1 )</code>，7 天为基准，67 天触底</td></tr>
+            <tr><td>生命周期 <span class="mono">w_life</span></td><td class="num mono">0.15</td><td>量产 1.00 / NRND 0.75 / 未知 0.70 / 预览 0.60 / EOL 0.15</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3 class="panel-title">风险三级判定</h3><span class="panel-sub">触发即升级，取最高档</span></div>
+        <table class="dtable dtable-tight">
+          <thead><tr><th>等级</th><th>触发条件</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="risk risk-high">🔴 高风险</span></td>
+              <td>EOL 停产 · 库存 ≤ 0 · 电压兼容 fail（供电范围无交集）· 功能一致 fail（关键功能参数冲突）</td>
+            </tr>
+            <tr>
+              <td><span class="risk risk-mid">🟡 中风险</span></td>
+              <td>NRND · 电压兼容 warn（仅部分覆盖）· 封装或引脚不一致（需改板）· 温度覆盖不足 · 类别不同 · 交期 &gt; 30 天</td>
+            </tr>
+            <tr>
+              <td><span class="risk risk-low">🟢 低风险</span></td>
+              <td>以上均未触发：参数、封装、供电、温度均满足且现货充足，可直接批量替换</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head"><h3 class="panel-title">替代等级四档</h3><span class="panel-sub">按保守程度递进，判定顺序自上而下</span></div>
+      <table class="dtable">
+        <thead><tr><th>等级</th><th>判定条件</th><th>工程含义</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tier tier-p2p">Pin-to-Pin 直接替换</span></td>
+            <td>类别 / 封装 / 引脚均 pass，电压非 fail，温度 pass，功能非 fail，且存在引脚兼容证据（人工维护的 <code>p2p_with</code> 关系表，或厂商描述中出现「引脚兼容 / pin-to-pin / 直接替换」等措辞）</td>
+            <td>不改 PCB、不改固件，可直接换料</td>
+          </tr>
+          <tr>
+            <td><span class="tier tier-redesign">功能等效需改板</span></td>
+            <td>封装与引脚一致、但缺少引脚兼容声明，或内核架构 / 引脚定义不同</td>
+            <td>功能等效，需核对引脚定义，可能需改 PCB 或固件</td>
+          </tr>
+          <tr>
+            <td><span class="tier tier-ref">参考替代</span></td>
+            <td>不满足前两档：功能参数冲突，或封装 / 引脚不一致但未触零容忍</td>
+            <td>仅供参考，需完整评估外围电路</td>
+          </tr>
+          <tr>
+            <td><span class="tier tier-no">不推荐</span></td>
+            <td>类别不符 / EOL / 零库存 / 命中任一零容忍硬约束</td>
+            <td>不做替代方案，仅列入排除清单供核对</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h3 class="panel-title">自然语言支路的修正</h3><span class="panel-sub">TF-IDF 感知不到「品类」与「封装族」</span></div>
+      <ul class="bullet-list">
+        <li><strong>品类归一 + 同义词注入</strong>：口语词（如 <code>LDO</code>、<code>DC-DC</code>、<code>单片机</code>）先映射到库中真实品类标签，再把同义词重复 2 次注入查询向量提升 TF 权重；命中品类后做硬过滤，剩余条数即接口里的 <code>filtered_out</code>。</li>
+        <li><strong>同品类加分 / 封装族降权</strong>：同大类但不同脚位的封装（如 SOT-23 vs SOT-23-5）按 0.75 轻降权，跨封装族按 0.65 降权，避免「封装差一位」的候选挤掉精确封装。</li>
+        <li><strong>接口协议重排</strong>：接口芯片是大类（RS-232 / RS-485 / CAN / USB 共用），TF-IDF 分不出协议，按查询中出现的协议关键词重排。</li>
+        <li><strong>约束只对写明的项出结论</strong>：查询里写了电压 / 封装 / 脚位才判定；电压全不覆盖记 fail，封装与脚位不符记 warn（NL 支路没有原件参数，不宜直接判死）。</li>
+      </ul>
+    </section>
+  </section>
+
+  <!-- ============================ 4. 关于与声明 ============================ -->
+  <section id="panel-about" class="tab-panel" role="tabpanel" aria-labelledby="tab-about" hidden>
+
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-head"><h3 class="panel-title">作品定位</h3></div>
+        <ul class="bullet-list">
+          <li><strong>解决什么问题</strong>：缺料 / 停产 / 涨价时，工程师要在几小时内判断「哪颗料能顶上」。本系统把这件事从「翻 datasheet 凭经验」变成「一条可复核的推荐清单」。</li>
+          <li><strong>差异化在哪</strong>：不做黑箱打分。每条推荐都能展开看到六维规则逐条结论 + 中文数值依据 + 供应链四因子取值，落选候选也给出否决理由 —— <strong>可解释性是本作品的核心卖点</strong>。</li>
+          <li><strong>工程形态</strong>：纯本地推理，无外部模型 / 无网络依赖，单次查询毫秒级；页面零 CDN 依赖，可离线演示。</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3 class="panel-title">评测结果</h3><span class="panel-sub">同一份 89 条演示数据、同一套规则口径</span></div>
+        <table class="dtable dtable-tight eval-table">
+          <thead><tr><th>指标</th><th class="num">结果</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>型号替换 Top-1 命中</td><td class="num"><strong>6 / 7</strong><span class="pct">85.7%</span></td><td>7 条型号用例的第一条推荐是否符合工程预期</td></tr>
+            <tr><td>型号替换 Top-5 命中</td><td class="num"><strong>7 / 7</strong><span class="pct">100%</span></td><td>正确替代料是否出现在前 5 条内</td></tr>
+            <tr><td>自然语言品类识别</td><td class="num"><strong>9 / 9</strong></td><td>中文需求正确落到库中品类</td></tr>
+            <tr><td>硬约束违规</td><td class="num"><strong>0 / 19</strong></td><td>19 条用例中推荐结果违反零容忍约束的次数</td></tr>
+            <tr><td>端到端延迟 p95</td><td class="num"><strong>4.81 ms</strong></td><td>含召回 + 规则 + 排序 + 定级的完整链路</td></tr>
+            <tr><td>回归测试</td><td class="num"><strong>25 条通过</strong></td><td>规则 / 排序 / 风险 / 接口契约</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">数据声明（务必注意）</div>
+      <ul class="bullet-list bullet-tight">
+        <li>演示数据集来自公开的 <strong>jlcparts</strong> 数据集抽取子集（型号 / 厂商 / 品类 / 封装 / 引脚 / 供电 / 温度 / 库存 / 价格 / 描述 / datasheet 链接等字段）。</li>
+        <li><strong><code>lead_time_days</code>（交期）与 <code>lifecycle</code>（生命周期）是人工整理的演示字段</strong>：公开 jlcparts 数据集<strong>不提供这两列</strong>。它们用于演示供应链因子的计算与排序影响，<strong>不代表真实交期，也不构成实时供应链数据</strong>。</li>
+        <li>库存与价格取自数据集快照，同样不是实时行情；生产环境需接入实时料况源（代理商 API / 内部 ERP / 期货数据）。</li>
+        <li>本系统输出为<strong>工程决策辅助</strong>，最终选型须以原厂 datasheet 与实板验证为准 —— 页面里每条结论都给出了可复核的规则依据，就是为了让工程师能快速验证而不是盲信。</li>
+      </ul>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head"><h3 class="panel-title">已知局限</h3><span class="panel-sub">如实列出，不修饰</span></div>
+      <ol class="limit-list">
+        <li><strong>自然语言用例仍有 4 条不准</strong>：长尾口语表述、多约束叠加（同时指定电压 + 封装 + 功耗）时，召回依赖词面相似度，可能排不出工程上最优的那颗料 —— 这正是需要品类归一与重排补丁的原因。</li>
+        <li><strong>供应链因子在现有用例上测不出 Top-1 差异</strong>：演示子集规模小、候选区分度主要在规则分上，供应链加权对最终排序名次的影响在评测用例里体现不出来。因此本页只声称「供应链可参与排序」，不声称「供应链提升了 Top-1」。</li>
+        <li><strong>规则覆盖依赖描述文本质量</strong>：功能一致规则从描述里抽参数指纹，描述缺失参数时只能给 warn（需人工核对），这不是规则失效而是数据不足，页面上会如实显示 warn。</li>
+        <li><strong>功能一致不等于参数全集一致</strong>：当前指纹覆盖电压 / 位宽 / 通道 / 容量 / 沟道 / Flash / RAM 等可从文本抽取的维度，未覆盖全部电气指标（如精度、噪声、ESR、驱动能力）。</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h3 class="panel-title">技术栈与接口</h3></div>
+      <div class="grid-3">
+        <div class="kv-card">
+          <div class="kv-title">后端</div>
+          <ul class="kv-list">
+            <li>Python + Flask，统一 <code>create_app()</code></li>
+            <li>scikit-learn TF-IDF + 余弦相似度</li>
+            <li>jieba 分词（可降级字符 2-gram）</li>
+            <li>纯 CPU、无外部模型</li>
+          </ul>
+        </div>
+        <div class="kv-card">
+          <div class="kv-title">前端</div>
+          <ul class="kv-list">
+            <li>原生 HTML / CSS / ES 模块，零 CDN</li>
+            <li>图表手写 CSS/SVG（条形图 + 环形图）</li>
+            <li>无框架、无 npm、无构建步骤</li>
+            <li>离线可跑，适配 1280×800 演示分辨率</li>
+          </ul>
+        </div>
+        <div class="kv-card">
+          <div class="kv-title">接口</div>
+          <ul class="kv-list">
+            <li><code>GET /api/recommend?part=&amp;top=</code></li>
+            <li><code>GET /api/part/&lt;part_no&gt;</code></li>
+            <li><code>GET /api/stats</code></li>
+            <li><code>GET /api/suggest?q=</code></li>
+            <li><code>POST /api/feedback</code> · <code>GET /api/health</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </section>
+
+</main>
+
+<footer class="app-footer">
+  <div class="footer-inner">
+    <span>芯选 XinXuan · 2026AIC「AI + 集成电路」算法主题赛 · 方向 5 芯片智能供应链</span>
+    <span class="footer-sep">·</span>
+    <span>后端版本 <code id="footer-version">—</code></span>
+    <span class="footer-sep">·</span>
+    <span>数据为演示子集，交期与生命周期为人工整理字段，非实时供应链数据</span>
+  </div>
+</footer>
+
+<script defer src="/static/app.js"></script>
+</body>
+</html>

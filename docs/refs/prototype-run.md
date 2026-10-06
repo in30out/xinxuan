@@ -3,6 +3,23 @@
 > 本文档所有命令均在 `C:\MyFiles\Develop\dsh\work_1` 下真实执行，输出为终端原始内容（仅去掉 jieba 首次加载 stderr 的重复行）。
 > 采集时间：2026-10-05。
 
+## 0. 时效性说明（2026-10-06 追加，必读）
+
+本文档 §1~§6 的终端输出采集于 **2026-10-05**，其中**相似度与总分绝对值已过时**：Lead 随后修复了 `recall.tokenize()` 的契约缺陷（原返回空格连接的字符串，被 sklearn `_word_ngrams` 按**字符**切片，1-2gram 退化；现返回 token 列表、token 内空白换下划线、丢弃单字符 ASCII token）。修复后相似度量级整体下降，**当前权威基线请看 `docs/refs/eval-report.md`**；本文档中仍然有效的是：命令与退出码、耗时量级、HTTP 状态码/字节数、规则拦截行为、`p2p_with` 关系结论、环境与踩坑记录。
+
+另外两处改名/新增：`prototype/app.py` 已拆分为**应用本体 `prototype/wsgi.py`** + 转发壳 `prototype/app.py`（`app` 模块名会与 PyPI 无关发行版撞车，实测 `ImportError: cannot import name 'VERSION' from 'app'`）；`recall.py` 另增纯 numpy 的 `_NumpyTfidf` 兜底路径（`XINXUAN_VECTORIZER=sklearn|numpy` 可强制）。
+
+**Lead 修复后我重测的当前基线**（同一命令，实测）：
+
+```
+python prototype/recommend.py STM32F103C8T6 --top 3     耗时: 25.32 ms
+1. APM32F103C8T6            总分 0.726 相似 0.27 规则 1.00 供应链 0.79
+2. STC8H8K64U-45I-LQFP48    总分 0.708 相似 0.17 规则 1.00 供应链 0.84
+3. CH32V203C8T6             总分 0.689 相似 0.19 规则 1.00 供应链 0.75
+```
+
+**我的独立交叉验证（真实执行，exit 0）**：`scripts/compare_vectorizer.py` → `Top-5 顺序完全一致: 10/10` / `相似度最大相对误差: 2.429e-06` / `VECTORIZER_MATCH_OK`；`scripts/_check_api.py` → 7 组接口冒烟全 OK，耗时 1.50s，`SMOKE_OK`。
+
 ## 1. 运行环境与解释器
 
 | 项 | 值 |
@@ -134,7 +151,7 @@ EXIT=0
 后台启动（`$env:PORT=5001`）：
 
 ```powershell
-& $py prototype\app.py     # 后台作业 pwsh-119
+& $py prototype\wsgi.py     # 后台作业 pwsh-119
 ```
 
 服务端日志（节选）：
@@ -193,7 +210,7 @@ python scripts\fetch_deps.py --target .deps        # 或 pwsh -File scripts/setu
 $env:PYTHONPATH="<ws>\.deps"; $env:PYTHONIOENCODING="utf-8"
 python prototype\recommend.py STM32F103C8T6 --top 5
 # 3) 运行 Web
-$env:PORT=5001; python prototype\app.py
+$env:PORT=5001; python prototype\wsgi.py
 ```
 
 `prototype/` 各文件行数（用户要求每文件 ≤150 行）：`data_loader.py` 76、`recall.py` 72、`rules.py` 147、`ranking.py` 95、`risk.py` 150、`recommend.py` 110、`app.py` 88。

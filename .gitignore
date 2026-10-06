@@ -14,6 +14,8 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+# pytest 在受限沙箱里无法写 .pytest_cache，会在仓库根留下拒访的临时目录
+pytest-cache-files-*/
 
 # ===== 运行期产物 =====
 *.log
@@ -22,6 +24,8 @@ tmp*
 .tmp/
 build/
 dist/
+# PyInstaller 的 spec 由 build_exe.py 现场生成（内含本机绝对路径），不提交
+*.spec
 
 # ===== 数据集：可重新下载/生成的大文件 =====
 # 生成命令：

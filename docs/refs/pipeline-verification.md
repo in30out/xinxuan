@@ -3,6 +3,16 @@
 > 结论先行：**链路已在真实环境跑通**（数据 → 召回 → 规则 → 排序 → 风险分级 → CLI / HTTP API 全为真实执行），
 > 唯一硬约束是**本沙箱内 `pip` 无法使用**，已用自写下载器绕过并记录。原始终端输出见 `prototype-run.md`。
 
+## 0. 时效性说明（2026-10-06 追加，必读）
+
+本报告采集于 **2026-10-05**。以下内容仍然成立：pip 不可用与绕行方案（§2）、层次划分与规则行为（§3 的定性结论）、踩坑清单（§4）、创新点难度（§6）、技术栈建议（§7）、遗留问题（§8）。
+
+**已过时的部分**：§3 与 §5 里所有**相似度/总分的具体数值**。原因是 Lead 修复了 `recall.tokenize()` 的 sklearn 契约缺陷（原返回字符串 → `ngram_range=(1,2)` 被按字符切片退化为伪 2-gram；现返回 token 列表并清洗空白/单字符 ASCII token），修复后相似度量级整体下降，且 §3 的 `vocab=1317` 需以修复后词表为准。当前权威评测请看 `docs/refs/eval-report.md`（型号 Top-1 6/7、Top-5 7/7，E4 硬约束违规 0/19，`pytest -q -p no:cacheprovider` 25 passed）。
+
+**改名影响**：`app.py`（Flask 应用本体）已改为 `prototype/wsgi.py`，`prototype/app.py` 仅保留为转发壳；表格与命令中出现的 `app.py` 请按 `wsgi.py` 理解。
+
+**修复后我实测的当前基线**：`python prototype/recommend.py STM32F103C8T6 --top 3` → 25.32 ms，APM32F103C8T6 0.726/相似 0.27/规则 1.00/🟢Pin-to-Pin，STC8H8K64U-45I-LQFP48 0.708，CH32V203C8T6 0.689。**独立交叉验证（exit 0）**：`scripts/compare_vectorizer.py` 10/10 顺序一致、相似度最大相对误差 2.429e-06、`VECTORIZER_MATCH_OK`；`scripts/_check_api.py` 7 组全 OK、1.50s、`SMOKE_OK`。
+
 ## 1. 环境结论（实测）
 
 | 项 | 实测值 |
@@ -44,7 +54,7 @@ ERROR: Could not install packages due to an OSError: [Errno 13] Permission denie
 | 规则层 | `rules.check_rules`：类别/封装/引脚/电压/**功能参数指纹**/温度 六条规则，pass-warn-fail 三态 + 加权分 | `STM32F103C8T6` 类全部 pass，规则分 1.00；`AMS1117-5.0` 因输出电压冲突得 0.70/功能 fail |
 | 排序层 | `ranking.rank`：型号模式 `0.70×规则分 + 0.30×相似度`；**自然语言模式 `param = 相似度`（规则分只展示、不参与排序）**；最后 × `(0.65 + 0.35×供应链因子)` | 相似度更高但功能冲突的候选（`W25Q32JVSSIQ` 0.88）被规则分拉低到第 2 |
 | 风险层 | `risk.assess`：🟢/🟡/🔴 + 四档替代等级 + 中文理由 | `LD1117S33TR`（EOL/0 库存）→ 🔴 不推荐；`TPS7A4901DGNR` 无同封装候选 → 只给参考替代 |
-| 应用层 | `recommend.py` CLI、`app.py` Flask（`/`、`/api/recommend`、`/stats`，含 CORS） | CLI exit 0（见 2.x 各段）；HTTP 200/400 与服务器日志齐全，端口已释放 |
+| 应用层 | `recommend.py` CLI、`wsgi.py` Flask（`/`、`/api/recommend`、`/stats`，含 CORS；`app.py` 仅为转发壳） | CLI exit 0（见 2.x 各段）；HTTP 200/400 与服务器日志齐全，端口已释放 |
 
 自写的两个"数据质量"机制在实测中都起到了作用：
 1. **`p2p_with` 人工关系列**（同封装同脚数的直接替换关系）与描述关键词共同构成"引脚兼容证据"，

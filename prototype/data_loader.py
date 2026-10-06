@@ -9,12 +9,20 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from typing import Optional
 
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_CSV = os.path.join(ROOT, "data", "samples", "chips_seed.csv")
+# 打包成 .exe 后 ROOT 指向 PyInstaller 的临时解包目录，因此显式检查 _MEIPASS。
+# 顺序：环境变量 CHIPS_CSV > _MEIPASS/data > 仓库 data（开发态）。
+_MEI = getattr(sys, "_MEIPASS", "")
+DEFAULT_CSV = os.path.join(
+    _MEI or ROOT, "data", "samples", "chips_seed.csv"
+) if _MEI else os.path.join(ROOT, "data", "samples", "chips_seed.csv")
+if _MEI and not os.path.exists(DEFAULT_CSV):  # pragma: no cover - 打包兜底
+    DEFAULT_CSV = os.path.join(ROOT, "data", "samples", "chips_seed.csv")
 
 # 查询尾部口语词：只做「尾部」剥离，且必须先原样匹配失败才启用，
 # 否则会破坏真实型号（如含 "COMP" 的料号）。含中文的词不需要 \b。
